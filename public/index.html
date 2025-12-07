@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <title>Laundry Service</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width:100%; }
+    #orders { margin-top: 24px; }
+    .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; }
+    .meta { color:#666; font-size:12px; }
+  </style>
 </head>
 <body>
   <h1>Laundry Booking</h1>
@@ -19,9 +26,53 @@
 
   <button id="placeOrder">Place Order</button>
 
+  <div id="orders">
+    <h2>Pregled naročil</h2>
+    <div id="ordersList">Nalaganje...</div>
+  </div>
+
   <script>
     function isValidEmail(email) {
       return /.+@.+\..+/.test(email);
+    }
+
+    async function loadOrders() {
+      const list = document.getElementById('ordersList');
+      list.textContent = 'Nalaganje...';
+      try {
+        const res = await fetch('/orders');
+        if (!res.ok) throw new Error('Network response not ok');
+        const orders = await res.json();
+        if (!orders.length) {
+          list.innerHTML = '<i>Ni še nobenih naročil.</i>';
+          return;
+        }
+        list.innerHTML = '';
+        orders.forEach(o => {
+          const div = document.createElement('div');
+          div.className = 'order';
+          const created = o.createdAt ? new Date(o.createdAt).toLocaleString() : '';
+          div.innerHTML = `
+            <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
+            <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
+            <div class="meta">Status: ${escapeHtml(o.status || 'Pending')}</div>
+          `;
+          list.appendChild(div);
+        });
+      } catch (err) {
+        console.error(err);
+        list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str && str !== 0) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     async function order() {
@@ -41,11 +92,17 @@
           body: JSON.stringify({ name, email, address, service })
         });
         if (!res.ok) {
-          const err = await res.text();
-          throw new Error(err || 'Server error');
+          const err = await res.json().catch(() => null);
+          throw new Error(err && err.error ? err.error : 'Server error');
         }
         const data = await res.json();
         alert(data.message || "Order placed!");
+        // Clear inputs
+        document.getElementById("name").value = '';
+        document.getElementById("email").value = '';
+        document.getElementById("address").value = '';
+        // Refresh list
+        loadOrders();
       } catch (err) {
         console.error(err);
         alert("Failed to place order. See console for details.");
@@ -53,6 +110,9 @@
     }
 
     document.getElementById("placeOrder").addEventListener("click", order);
+
+    // Initial load
+    loadOrders();
   </script>
 </body>
 </html>

@@ -6,9 +6,7 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
-
 app.use(express.static(path.join(__dirname, "public")));
-
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -26,7 +24,7 @@ const OrderSchema = new mongoose.Schema({
     match: [/.+@.+\..+/, 'Please enter a valid email address']
   },
   status: { type: String, default: "Pending" }
-});
+}, { timestamps: true });
 
 const Order = mongoose.model("Order", OrderSchema);
 
@@ -35,11 +33,27 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-
+// Create order
 app.post("/order", async (req, res) => {
-  const order = new Order(req.body);
-  await order.save();
-  res.json({ message: "Order placed!", order });
+  try {
+    const order = new Order(req.body);
+    await order.save();
+    res.json({ message: "Order placed!", order });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || "Failed to place order" });
+  }
+});
+
+// New: list orders (most recent first)
+app.get("/orders", async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }).lean();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
