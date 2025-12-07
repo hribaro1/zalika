@@ -18,6 +18,13 @@ const OrderSchema = new mongoose.Schema({
   name: String,
   service: String,
   address: String,
+  email: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true,
+    match: [/.+@.+\..+/, 'Please enter a valid email address']
+  },
   status: { type: String, default: "Pending" }
 });
 

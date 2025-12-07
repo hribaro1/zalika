@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8" />
   <title>Laundry Service</title>
 </head>
 <body>
   <h1>Laundry Booking</h1>
 
   <input id="name" placeholder="Your Name" />
+  <input id="email" placeholder="Your Email" />
   <input id="address" placeholder="Your Address" />
   
   <select id="service">
@@ -15,22 +17,42 @@
     <option>Ironing</option>
   </select>
 
-  <button onclick="order()">Place Order</button>
+  <button id="placeOrder">Place Order</button>
 
   <script>
-    function order() {
-      fetch("/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: document.getElementById("name").value,
-          address: document.getElementById("address").value,
-          service: document.getElementById("service").value
-        })
-      })
-      .then(res => res.json())
-      .then(data => alert(data.message));
+    function isValidEmail(email) {
+      return /.+@.+\..+/.test(email);
     }
+
+    async function order() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const service = document.getElementById("service").value;
+
+      if (!name) return alert("Please enter your name.");
+      if (!email || !isValidEmail(email)) return alert("Please enter a valid email address.");
+      if (!address) return alert("Please enter your address.");
+
+      try {
+        const res = await fetch("/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, address, service })
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err || 'Server error');
+        }
+        const data = await res.json();
+        alert(data.message || "Order placed!");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to place order. See console for details.");
+      }
+    }
+
+    document.getElementById("placeOrder").addEventListener("click", order);
   </script>
 </body>
 </html>
