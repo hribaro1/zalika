@@ -1,11 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 app.use(express.json());
 
-const path = require("path");
+
 app.use(express.static(path.join(__dirname, "public")));
 
 
@@ -22,9 +23,7 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", OrderSchema);
 
-app.get("/", (req, res) => {
-  res.send("Laundry App API is running");
-});
+
 
 app.post("/order", async (req, res) => {
   const order = new Order(req.body);
