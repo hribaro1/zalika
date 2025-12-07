@@ -7,7 +7,7 @@
   },
   "keywords": [],
   "author": "",
-y  "license": "ISC",
+  "license": "ISC",
   "description": "",
   "dependencies": {
     "body-parser": "^2.2.1",
