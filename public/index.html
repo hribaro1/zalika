@@ -31,6 +31,44 @@
     <div id="ordersList">Nalaganje...</div>
   </div>
 
+  <!-- Edit modal (prilepite pred <script src="/socket.io/socket.io.js"></script>) -->
+  <div id="editModal" class="modal" aria-hidden="true" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modal-header">
+        <h3 id="editModalTitle">Uredi naročilo</h3>
+        <button class="modal-close" onclick="closeEditModal()" aria-label="Zapri">×</button>
+      </div>
+      <div class="modal-body">
+        <label>Ime
+          <input id="edit-name" type="text" />
+        </label>
+        <label>E-pošta
+          <input id="edit-email" type="email" />
+        </label>
+        <label>Telefon
+          <input id="edit-phone" type="text" />
+        </label>
+        <label>Naslov
+          <input id="edit-address" type="text" />
+        </label>
+        <label>Storitev
+          <select id="edit-service">
+            <option>Pranje</option>
+            <option>Pranje in likanje</option>
+            <option>Čistilnica</option>
+          </select>
+        </label>
+        <label>Status
+          <select id="edit-status"></select>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="edit-cancel" class="small-btn secondary">Prekliči</button>
+        <button id="edit-save" class="small-btn primary">Shrani</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
