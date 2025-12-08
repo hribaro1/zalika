@@ -11,7 +11,14 @@
     <a href="/customers">Stranke</a> |
     <a href="/articles">Artikli</a>
   </nav>
+
   <h1>Sprejem naročila</h1>
+
+  <!-- Customer autocomplete: typeahead dropdown that filters while typing -->
+  <div class="customer-autocomplete">
+    <input id="customerInput" placeholder="Ime in priimek stranke" autocomplete="off" />
+    <div id="customerSuggestions" class="suggestions" aria-hidden="true"></div>
+  </div>
 
   <input id="email" placeholder="E-pošta" />
   <input id="phone" placeholder="Telefonska številka" />
@@ -30,7 +37,7 @@
     <div id="ordersList">Nalaganje...</div>
   </div>
 
-  <!-- Edit modal (prilepite pred <script src="/socket.io/socket.io.js"></script>) -->
+  <!-- Edit modal -->
   <div id="editModal" class="modal" aria-hidden="true" style="display:none;">
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
       <div class="modal-header">
@@ -66,11 +73,6 @@
         <button id="edit-save" class="small-btn primary">Shrani</button>
       </div>
     </div>
-  </div>
-
-  <div class="customer-autocomplete">
-    <input id="customerInput" placeholder="Ime in priimek stranke" autocomplete="off" />
-    <div id="customerSuggestions" class="suggestions" aria-hidden="true"></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
