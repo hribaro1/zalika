@@ -157,3 +157,74 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 #customersList > .customer:nth-child(even) {
   background: transparent;
 }
+
+/* Customers — improved card look (aligned with articles design) */
+#customersList .customer {
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border: 1px solid rgba(30,60,90,0.05);
+  box-shadow: 0 8px 24px rgba(12,30,60,0.06);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 120ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Slight lift on hover */
+#customersList .customer:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(12,30,60,0.12);
+}
+
+/* Meta line layout */
+#customersList .customer .meta {
+  color: #4f6678;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Actions area aligned right on wide screens, wrapped on small */
+#customersList .customer .customer-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Button styles */
+#customersList .customer .small-btn {
+  background: #0b74ff;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 6px 18px rgba(11,116,255,0.08);
+}
+#customersList .customer .small-btn:hover { transform: translateY(-2px); }
+
+/* Danger / delete button variant */
+#customersList .customer .danger {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-left: 6px;
+}
+#customersList .customer .danger:hover { filter: brightness(0.95); }
+
+/* Make sure alternating rows still visible (keeps previous light-blue) */
+#customersList > .customer:nth-child(odd) {
+  background-color: #e8f4ff !important;
+}
+
+/* Responsive: stack actions under meta on very small screens */
+@media (max-width: 520px) {
+  #customersList .customer { padding: 10px; }
+  #customersList .customer .customer-actions { justify-content: flex-start; gap:6px; }
+  #customersList .customer .small-btn, #customersList .customer .danger { padding: 8px 10px; font-size: 13px; }
+}
