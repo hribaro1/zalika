@@ -96,10 +96,16 @@ async function updateStatus(id, status) {
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     const data = await res.json();
-    // server will broadcast, but update UI immediately too
-    document.getElementById(`status-${id}`).textContent = data.order.status;
-    const orderEl = document.getElementById('order-' + id);
-    if (orderEl) orderEl.className = 'order ' + statusToClass(data.order.status);
+    // Update UI only if elements still exist (avoid race with socket-driven reload)
+    const statusEl = document.getElementById(`status-${id}`);
+    if (statusEl) {
+      statusEl.textContent = data.order.status;
+      const orderEl = document.getElementById('order-' + id);
+      if (orderEl) orderEl.className = 'order ' + statusToClass(data.order.status);
+    } else {
+      // If element was removed (socket already reloaded list), refresh to ensure consistent UI
+      loadOrders();
+    }
     alert('Status posodobljen.');
   } catch (err) {
     console.error(err);
