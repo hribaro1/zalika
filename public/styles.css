@@ -25,3 +25,32 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 
 .small-btn { padding:6px 10px; font-size:13px; margin-left:6px; border-radius:6px; cursor:pointer; }
 .status-select { margin-top:8px; }
+
+/* Modal styling */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal[aria-hidden="true"] { display: none; }
+.modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+.modal-content {
+  position: relative;
+  background: #fff;
+  padding: 18px;
+  border-radius: 8px;
+  width: 420px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.modal-header { margin-bottom: 10px; }
+.modal-body input, .modal-body select { width: 100%; box-sizing: border-box; }
+.modal-actions { margin-top: 12px; text-align: right; }
