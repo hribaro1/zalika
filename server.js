@@ -237,17 +237,19 @@ app.put("/order/:id", async (req, res) => {
   }
 });
 
-// Update only status (safer: find-save to avoid update-validator edgecases)
+// Update only status (use findByIdAndUpdate without runValidators to avoid failing due to other missing fields)
 app.patch("/order/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
     if (!STATUS_OPTIONS.includes(status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true } // do not run validators here to avoid failing when other required fields are missing
+    );
     if (!order) return res.status(404).json({ error: "Order not found" });
-    order.status = status;
-    await order.save(); // will run validators against the full document
     io.emit('orderUpdated', order);
     res.json({ message: "Status updated", order });
   } catch (err) {

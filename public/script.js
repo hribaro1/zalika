@@ -101,7 +101,10 @@ async function updateStatus(id, status) {
     const orderEl = document.getElementById('order-' + id);
     if (orderEl) orderEl.className = 'order ' + statusToClass(data.order.status);
     alert('Status posodobljen.');
-  } catch (err) { console.error(err); alert('Napaka pri posodabljanju statusa. Preverite konzolo.'); }
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri posodabljanju statusa: ' + (err && err.message ? err.message : 'Neznana napaka') + '. Preverite konzolo za več.');
+  }
 }
 
 /* Modal editing functions (same as previous implementation). Keep them here or import if you separated files. */
