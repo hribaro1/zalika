@@ -1,12 +1,16 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
+const http = require("http");
 require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, "public")));
+
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -36,6 +40,12 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", OrderSchema);
 
+// Socket.IO: prijava novih povezav (trenutno brez posebne per-socket logike)
+io.on('connection', (socket) => {
+  console.log('Socket connected:', socket.id);
+  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
+});
+
 // Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -46,6 +56,8 @@ app.post("/order", async (req, res) => {
   try {
     const order = new Order(req.body);
     await order.save();
+    // emit event to all connected clients
+    io.emit('orderCreated', order);
     res.json({ message: "Order placed!", order });
   } catch (err) {
     console.error(err);
@@ -73,6 +85,7 @@ app.put("/order/:id", async (req, res) => {
     }
     const order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
     if (!order) return res.status(404).json({ error: "Order not found" });
+    io.emit('orderUpdated', order);
     res.json({ message: "Order updated", order });
   } catch (err) {
     console.error(err);
@@ -89,6 +102,7 @@ app.patch("/order/:id/status", async (req, res) => {
     }
     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true, runValidators: true });
     if (!order) return res.status(404).json({ error: "Order not found" });
+    io.emit('orderUpdated', order);
     res.json({ message: "Status updated", order });
   } catch (err) {
     console.error(err);
@@ -97,7 +111,7 @@ app.patch("/order/:id/status", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
