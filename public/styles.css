@@ -54,3 +54,14 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 .modal-header { margin-bottom: 10px; }
 .modal-body input, .modal-body select { width: 100%; box-sizing: border-box; }
 .modal-actions { margin-top: 12px; text-align: right; }
+
+/* Navigation */
+.main-nav { margin-bottom: 14px; }
+.main-nav a { color: #007bff; text-decoration: none; margin-right: 8px; }
+.main-nav a:hover { text-decoration: underline; }
+
+/* Customers page */
+.customer-list .customer { border:1px solid #e5e5e5; padding:10px; border-radius:6px; margin-bottom:8px; }
+.customer-actions { margin-top:8px; }
+.danger { background:#ff4d4d; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+.small-input { width:220px; }

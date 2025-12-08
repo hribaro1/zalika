@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Stranke — upravljanje</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="main-nav">
+    <a href="/">Domov</a> |
+    <a href="/customers">Stranke</a>
+  </nav>
+
+  <h1>Upravljanje strank</h1>
+
+  <section id="addCustomer">
+    <h2>Dodaj novo stranko</h2>
+    <input id="c-name" placeholder="Ime in priimek" />
+    <input id="c-email" placeholder="E-pošta" />
+    <input id="c-phone" placeholder="Telefonska številka" />
+    <input id="c-address" placeholder="Naslov (opcijsko)" />
+    <input id="c-notes" placeholder="Opombe (opcijsko)" />
+    <button id="addCustomerBtn">Dodaj stranko</button>
+  </section>
+
+  <section id="customers">
+    <h2>Seznam strank</h2>
+    <div id="customersList" class="customer-list">Nalaganje...</div>
+  </section>
+
+  <!-- Edit modal -->
+  <div id="custEditModal" class="modal" aria-hidden="true" style="display:none">
+    <div class="modal-content" role="dialog" aria-modal="true">
+      <div class="modal-header"><h3>Uredi stranko</h3></div>
+      <div class="modal-body">
+        <input id="edit-c-name" placeholder="Ime in priimek" />
+        <input id="edit-c-email" placeholder="E-pošta" />
+        <input id="edit-c-phone" placeholder="Telefonska številka" />
+        <input id="edit-c-address" placeholder="Naslov" />
+        <input id="edit-c-notes" placeholder="Opombe" />
+      </div>
+      <div class="modal-actions">
+        <button id="edit-cancel">Prekliči</button>
+        <button id="edit-save">Shrani</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="customers.js"></script>
+</body>
+</html>

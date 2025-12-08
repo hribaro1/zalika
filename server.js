@@ -36,6 +36,70 @@ const OrderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", OrderSchema);
 
+// Customer model for managing clients (stranke)
+const CustomerSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, trim: true, lowercase: true, match: [/.+@.+\..+/, 'Please enter a valid email address'] },
+  phone: { type: String, required: true, trim: true, match: [/^[+\d\s\-().]{6,20}$/, 'Please enter a valid phone number'] },
+  address: { type: String },
+  notes: { type: String }
+}, { timestamps: true });
+
+const Customer = mongoose.model("Customer", CustomerSchema);
+
+// Serve customers management page
+app.get('/customers', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'customers.html'));
+});
+
+// API: list customers
+app.get('/api/customers', async (req, res) => {
+  try {
+    const customers = await Customer.find().sort({ createdAt: -1 }).lean();
+    res.json(customers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch customers' });
+  }
+});
+
+// API: create customer
+app.post('/api/customers', async (req, res) => {
+  try {
+    const customer = new Customer(req.body);
+    await customer.save();
+    res.status(201).json({ message: 'Customer created', customer });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || 'Failed to create customer' });
+  }
+});
+
+// API: update customer
+app.put('/api/customers/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    const customer = await Customer.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    res.json({ message: 'Customer updated', customer });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || 'Failed to update customer' });
+  }
+});
+
+// API: delete customer
+app.delete('/api/customers/:id', async (req, res) => {
+  try {
+    const customer = await Customer.findByIdAndDelete(req.params.id);
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    res.json({ message: 'Customer deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete customer' });
+  }
+});
+
 // Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
