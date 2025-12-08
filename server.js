@@ -60,23 +60,20 @@ const ArticleSchema = new mongoose.Schema({
   finalPrice: { type: Number, required: true, min: 0 } // cena z DDV
 }, { timestamps: true });
 
-// pre-validate: ensure price/vatPercent are numbers and compute finalPrice
-ArticleSchema.pre('validate', function(next) {
-  // coerce to Number if possible
+// pre-validate: coerce price/vatPercent to Number and compute finalPrice
+// NOTE: use synchronous hook without 'next' to avoid "next is not a function" errors
+ArticleSchema.pre('validate', function() {
   const p = Number(this.price);
   const v = Number(this.vatPercent);
 
   if (!isNaN(p) && !isNaN(v)) {
-    // store coerced numeric values
     this.price = p;
     this.vatPercent = v;
     const factor = 1 + (v / 100);
     this.finalPrice = Math.round((p * factor) * 100) / 100;
   } else {
-    // let validators catch missing/invalid numeric values
     this.finalPrice = undefined;
   }
-  next();
 });
 
 const Article = mongoose.model('Article', ArticleSchema);
@@ -170,7 +167,6 @@ app.post('/api/articles', async (req, res) => {
 app.put('/api/articles/:id', async (req, res) => {
   try {
     const updates = req.body;
-    // ensure finalPrice recalculated by Mongoose pre-validate; use findById then set and save
     let article = await Article.findById(req.params.id);
     if (!article) return res.status(404).json({ error: 'Article not found' });
     article.set(updates);
@@ -205,7 +201,6 @@ app.post("/order", async (req, res) => {
   try {
     const order = new Order(req.body);
     await order.save();
-    // emit event to all connected clients
     io.emit('orderCreated', order);
     res.json({ message: "Order placed!", order });
   } catch (err) {
