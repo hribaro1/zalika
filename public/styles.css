@@ -1,0 +1,56 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width:100%; }
+#orders { margin-top: 24px; }
+.order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; transition: background 0.15s ease, border-color 0.15s ease; }
+.meta { color:#666; font-size:12px; }
+#placeOrder {
+  background: #007bff;
+  color: #fff;
+  padding: 12px 24px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  transition: background 0.15s ease, transform 0.08s ease;
+}
+#placeOrder:hover { background: #0062cc; transform: translateY(-1px); }
+
+/* Status barve: od rdeče → rumene → zelene */
+.s-naroceno { background: #ffecec; border-left: 6px solid #ff4d4d; }
+.s-sprejeto { background: #fff6e6; border-left: 6px solid #ffb84d; }
+.s-v-delu { background: #fffde6; border-left: 6px solid #ffd11a; }
+.s-koncano { background: #eaffeb; border-left: 6px solid #7ed37a; }
+.s-oddano { background: #dff7df; border-left: 6px solid #39b54a; }
+
+.small-btn { padding:6px 10px; font-size:13px; margin-left:6px; border-radius:6px; cursor:pointer; }
+.status-select { margin-top:8px; }
+
+/* Modal styling */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal[aria-hidden="true"] { display: none; }
+.modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+.modal-content {
+  position: relative;
+  background: #fff;
+  padding: 18px;
+  border-radius: 8px;
+  width: 420px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.modal-header { margin-bottom: 10px; }
+.modal-body input, .modal-body select { width: 100%; box-sizing: border-box; }
+.modal-actions { margin-top: 12px; text-align: right; }

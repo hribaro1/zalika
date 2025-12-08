@@ -1,0 +1,189 @@
+const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
+
+function isValidEmail(email) { return /.+@.+\..+/.test(email); }
+function isValidPhone(phone) { return /^[+\d\s\-().]{6,20}$/.test(phone); }
+function statusToClass(status) {
+  switch ((status || '').toLowerCase()) {
+    case 'naročeno': case 'naroceno': return 's-naroceno';
+    case 'sprejeto': return 's-sprejeto';
+    case 'v delu': case 'v-delu': return 's-v-delu';
+    case 'končano': case 'koncano': return 's-koncano';
+    case 'oddano': return 's-oddano';
+    default: return '';
+  }
+}
+function formatDateISO(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function escapeHtml(str) {
+  if (!str && str !== 0) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+async function loadOrders() {
+  const list = document.getElementById('ordersList');
+  list.textContent = 'Nalaganje...';
+  try {
+    const res = await fetch('/orders');
+    if (!res.ok) throw new Error('Network response not ok');
+    const orders = await res.json();
+    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; return; }
+    list.innerHTML = '';
+    orders.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'order ' + statusToClass(o.status);
+      div.id = 'order-' + o._id;
+      const created = o.createdAt ? formatDateISO(o.createdAt) : '';
+
+      const statusSelect = document.createElement('select');
+      statusSelect.className = 'status-select';
+      STATUS_OPTIONS.forEach(s => {
+        const opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+        if (o.status === s) opt.selected = true;
+        statusSelect.appendChild(opt);
+      });
+
+      const updateStatusBtn = document.createElement('button');
+      updateStatusBtn.textContent = 'Posodobi status'; updateStatusBtn.className = 'small-btn';
+      updateStatusBtn.addEventListener('click', () => updateStatus(o._id, statusSelect.value));
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Uredi'; editBtn.className = 'small-btn';
+      editBtn.addEventListener('click', () => openEditModal(o));
+
+      div.innerHTML = `
+        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
+        <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
+        <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
+      `;
+      const controls = document.createElement('div');
+      controls.appendChild(statusSelect);
+      controls.appendChild(updateStatusBtn);
+      controls.appendChild(editBtn);
+      div.appendChild(controls);
+
+      list.appendChild(div);
+    });
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<span style=\"color:red\">Napaka pri nalaganju naročil.</span>';
+  }
+}
+
+async function updateStatus(id, status) {
+  try {
+    const res = await fetch(`/order/${id}/status`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
+    const data = await res.json();
+    document.getElementById(`status-${id}`).textContent = data.order.status;
+    const orderEl = document.getElementById('order-' + id);
+    if (orderEl) orderEl.className = 'order ' + statusToClass(data.order.status);
+    alert('Status posodobljen.');
+  } catch (err) { console.error(err); alert('Napaka pri posodabljanju statusa. Preverite konzolo.'); }
+}
+
+/* Modal: open/populate/close/save */
+function openEditModal(order) {
+  const modal = document.getElementById('editModal');
+  modal.setAttribute('aria-hidden', 'false'); modal.style.display = 'flex';
+  // populate fields
+  document.getElementById('edit-name').value = order.name || '';
+  document.getElementById('edit-email').value = order.email || '';
+  document.getElementById('edit-phone').value = order.phone || '';
+  document.getElementById('edit-address').value = order.address || '';
+  // service
+  const srv = document.getElementById('edit-service');
+  for (let i=0;i<srv.options.length;i++) { if (srv.options[i].value === order.service) { srv.selectedIndex = i; break; } }
+  // status options (populate if empty)
+  const stat = document.getElementById('edit-status');
+  stat.innerHTML = '';
+  STATUS_OPTIONS.forEach(s => {
+    const opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+    if (order.status === s) opt.selected = true;
+    stat.appendChild(opt);
+  });
+  // store editing id on modal element
+  modal.dataset.editingId = order._id;
+  // focus first input
+  document.getElementById('edit-name').focus();
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('editModal');
+  modal.setAttribute('aria-hidden', 'true'); modal.style.display = 'none';
+  delete modal.dataset.editingId;
+}
+
+async function saveEdit() {
+  const modal = document.getElementById('editModal');
+  const id = modal.dataset.editingId;
+  if (!id) return;
+  const name = document.getElementById('edit-name').value.trim();
+  const email = document.getElementById('edit-email').value.trim();
+  const phone = document.getElementById('edit-phone').value.trim();
+  const address = document.getElementById('edit-address').value.trim();
+  const service = document.getElementById('edit-service').value;
+  const status = document.getElementById('edit-status').value;
+
+  if (!name || !email || !phone || !address) { alert('Ime, email, telefon in naslov morajo biti izpolnjeni.'); return; }
+  if (!isValidEmail(email)) { alert('Neveljaven email.'); return; }
+  if (!isValidPhone(phone)) { alert('Neveljavna telefonska številka.'); return; }
+
+  try {
+    const res = await fetch(`/order/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, address, service, status })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
+    alert('Naročilo posodobljeno.');
+    closeEditModal();
+    loadOrders();
+  } catch (err) {
+    console.error(err); alert('Napaka pri posodabljanju naročila. Preverite konzolo.');
+  }
+}
+
+/* Bind events */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('placeOrder').addEventListener('click', order);
+  document.getElementById('edit-cancel').addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
+  document.getElementById('edit-save').addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
+  loadOrders();
+});
+
+/* place order function */
+async function order() {
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const service = document.getElementById('service').value;
+
+  if (!name) return alert('Vnesite ime.');
+  if (!email || !isValidEmail(email)) return alert('Vnesite veljaven email.');
+  if (!phone || !isValidPhone(phone)) return alert('Vnesite veljavno telefonsko številko.');
+  if (!address) return alert('Vnesite naslov.');
+
+  try {
+    const res = await fetch('/order', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, address, service })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
+    const data = await res.json();
+    alert('Naročilo sprejeto!');
+    document.getElementById('name').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('address').value = '';
+    loadOrders();
+  } catch (err) { console.error(err); alert('Napaka pri oddaji naročila. Preverite konzolo.'); }
+}
