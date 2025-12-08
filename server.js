@@ -60,11 +60,21 @@ const ArticleSchema = new mongoose.Schema({
   finalPrice: { type: Number, required: true, min: 0 } // cena z DDV
 }, { timestamps: true });
 
-// pre-save hook: compute finalPrice from price and vatPercent (rounded to 2 decimals)
+// pre-validate: ensure price/vatPercent are numbers and compute finalPrice
 ArticleSchema.pre('validate', function(next) {
-  if (typeof this.price === 'number' && typeof this.vatPercent === 'number') {
-    const factor = 1 + (this.vatPercent / 100);
-    this.finalPrice = Math.round((this.price * factor) * 100) / 100;
+  // coerce to Number if possible
+  const p = Number(this.price);
+  const v = Number(this.vatPercent);
+
+  if (!isNaN(p) && !isNaN(v)) {
+    // store coerced numeric values
+    this.price = p;
+    this.vatPercent = v;
+    const factor = 1 + (v / 100);
+    this.finalPrice = Math.round((p * factor) * 100) / 100;
+  } else {
+    // let validators catch missing/invalid numeric values
+    this.finalPrice = undefined;
   }
   next();
 });

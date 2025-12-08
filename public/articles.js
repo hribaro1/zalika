@@ -24,9 +24,9 @@ async function loadArticles(){
     list.innerHTML = '';
     articles.forEach(a => {
       const el = document.createElement('div');
-      el.className = 'order'; // reuse styling block
+      el.className = 'order';
       el.id = 'art-' + a._id;
-      el.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${a.price.toFixed(2)} € • DDV: ${a.vatPercent}% • Končna: ${a.finalPrice.toFixed(2)} €</div>`;
+      el.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
       const actions = document.createElement('div');
       const edit = document.createElement('button'); edit.textContent = 'Uredi'; edit.className = 'small-btn';
       edit.addEventListener('click', () => openEdit(a));
@@ -57,15 +57,22 @@ async function addArticle(){
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ name, unit, price, vatPercent: vat })
     });
-    if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
+    if(!res.ok){
+      const e = await res.json().catch(()=>null);
+      const msg = e && e.error ? e.error : 'Server error';
+      throw new Error(msg);
+    }
     alert('Artikel dodan.');
     document.getElementById('a-name').value='';
     document.getElementById('a-unit').value='';
     document.getElementById('a-price').value='';
     document.getElementById('a-vat').value='';
-    document.getElementById('a-final').textContent = '0.00';
+    document.getElementById('a-final').textContent = '0.00 €';
     loadArticles();
-  }catch(err){ console.error(err); alert('Napaka pri dodajanju artikla.'); }
+  }catch(err){
+    console.error(err);
+    alert('Napaka pri dodajanju artikla: ' + (err.message || 'neznana napaka'));
+  }
 }
 
 async function deleteArticle(id){
@@ -86,7 +93,7 @@ function openEdit(a){
   document.getElementById('edit-a-unit').value = a.unit || '';
   document.getElementById('edit-a-price').value = (a.price != null) ? a.price : '';
   document.getElementById('edit-a-vat').value = (a.vatPercent != null) ? a.vatPercent : '';
-  document.getElementById('edit-a-final').textContent = (a.finalPrice != null) ? a.finalPrice.toFixed(2) : '0.00';
+  document.getElementById('edit-a-final').textContent = (a.finalPrice != null) ? a.finalPrice.toFixed(2) + ' €' : '0.00 €';
 }
 
 function closeEdit(){
@@ -122,12 +129,12 @@ async function saveEdit(){
 function updateAddFinal(){
   const price = parseFloat(document.getElementById('a-price').value);
   const vat = parseFloat(document.getElementById('a-vat').value);
-  document.getElementById('a-final').textContent = computeFinal(price, vat).toFixed(2);
+  document.getElementById('a-final').textContent = computeFinal(price, vat).toFixed(2) + ' €';
 }
 function updateEditFinal(){
   const price = parseFloat(document.getElementById('edit-a-price').value);
   const vat = parseFloat(document.getElementById('edit-a-vat').value);
-  document.getElementById('edit-a-final').textContent = computeFinal(price, vat).toFixed(2);
+  document.getElementById('edit-a-final').textContent = computeFinal(price, vat).toFixed(2) + ' €';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
