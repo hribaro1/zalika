@@ -51,9 +51,40 @@ const CustomerSchema = new mongoose.Schema({
 
 const Customer = mongoose.model('Customer', CustomerSchema);
 
+// --- Articles (artikli) model + API ---
+const ArticleSchema = new mongoose.Schema({
+  name: { type: String, required: true },              // naziv
+  unit: { type: String, required: true },              // enota mere
+  price: { type: Number, required: true, min: 0 },     // osnovna cena (neto)
+  vatPercent: { type: Number, required: true, min: 0 },// DDV %
+  finalPrice: { type: Number, required: true, min: 0 } // cena z DDV
+}, { timestamps: true });
+
+// pre-save hook: compute finalPrice from price and vatPercent (rounded to 2 decimals)
+ArticleSchema.pre('validate', function(next) {
+  if (typeof this.price === 'number' && typeof this.vatPercent === 'number') {
+    const factor = 1 + (this.vatPercent / 100);
+    this.finalPrice = Math.round((this.price * factor) * 100) / 100;
+  }
+  next();
+});
+
+const Article = mongoose.model('Article', ArticleSchema);
+
+// Socket.IO: basic connect logging
+io.on('connection', (socket) => {
+  console.log('Socket connected:', socket.id);
+  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
+});
+
 // Serve customers management page (explicit route)
 app.get('/customers', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'customers.html'));
+});
+
+// Serve articles management page
+app.get('/articles', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'articles.html'));
 });
 
 // Customers API
@@ -71,6 +102,7 @@ app.post('/api/customers', async (req, res) => {
   try {
     const customer = new Customer(req.body);
     await customer.save();
+    io.emit('customerCreated', customer);
     res.status(201).json({ message: 'Customer created', customer });
   } catch (err) {
     console.error(err);
@@ -82,6 +114,7 @@ app.put('/api/customers/:id', async (req, res) => {
   try {
     const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    io.emit('customerUpdated', customer);
     res.json({ message: 'Customer updated', customer });
   } catch (err) {
     console.error(err);
@@ -93,10 +126,62 @@ app.delete('/api/customers/:id', async (req, res) => {
   try {
     const customer = await Customer.findByIdAndDelete(req.params.id);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    io.emit('customerDeleted', { _id: req.params.id });
     res.json({ message: 'Customer deleted' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to delete customer' });
+  }
+});
+
+// Articles API
+app.get('/api/articles', async (req, res) => {
+  try {
+    const articles = await Article.find().sort({ createdAt: -1 }).lean();
+    res.json(articles);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch articles' });
+  }
+});
+
+app.post('/api/articles', async (req, res) => {
+  try {
+    const article = new Article(req.body);
+    await article.save();
+    io.emit('articleCreated', article);
+    res.status(201).json({ message: 'Article created', article });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || 'Failed to create article' });
+  }
+});
+
+app.put('/api/articles/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    // ensure finalPrice recalculated by Mongoose pre-validate; use findById then set and save
+    let article = await Article.findById(req.params.id);
+    if (!article) return res.status(404).json({ error: 'Article not found' });
+    article.set(updates);
+    await article.save();
+    io.emit('articleUpdated', article);
+    res.json({ message: 'Article updated', article });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || 'Failed to update article' });
+  }
+});
+
+app.delete('/api/articles/:id', async (req, res) => {
+  try {
+    const article = await Article.findByIdAndDelete(req.params.id);
+    if (!article) return res.status(404).json({ error: 'Article not found' });
+    io.emit('articleDeleted', { _id: req.params.id });
+    res.json({ message: 'Article deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete article' });
   }
 });
 
