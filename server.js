@@ -18,6 +18,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
 
+// --- Orders schema (z dodatkom items) ---
 const OrderSchema = new mongoose.Schema({
   name: String,
   service: String,
@@ -35,7 +36,17 @@ const OrderSchema = new mongoose.Schema({
     trim: true,
     match: [/^[+\d\s\-().]{6,20}$/, 'Please enter a valid phone number']
   },
-  status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" }
+  status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" },
+  items: [{
+    articleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Article' },
+    name: String,
+    unit: String,
+    price: Number,       // net price
+    vatPercent: Number,
+    finalPrice: Number,  // price with VAT
+    quantity: { type: Number, min: 1, default: 1 },
+    lineTotal: Number    // finalPrice * quantity
+  }]
 }, { timestamps: true });
 
 const Order = mongoose.model("Order", OrderSchema);
@@ -220,15 +231,54 @@ app.get("/orders", async (req, res) => {
   }
 });
 
-// Update whole order (name, email, phone, address, service, status)
+// Update whole order (name, email, phone, address, service, status, items)
+// Replace the previous app.put("/order/:id", ...) with the safer version below:
 app.put("/order/:id", async (req, res) => {
   try {
     const updates = req.body;
+
+    // validate status if provided
     if (updates.status && !STATUS_OPTIONS.includes(updates.status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
-    const order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+
+    // If items are provided, compute canonical item fields (name, finalPrice, lineTotal) from Article records
+    if (Array.isArray(updates.items)) {
+      const resolvedItems = [];
+      for (const it of updates.items) {
+        // expecting it.articleId and it.quantity
+        if (!it.articleId) {
+          // If articleId missing, skip or accept a custom item if you want; here we'll skip
+          continue;
+        }
+        const art = await Article.findById(it.articleId).lean();
+        if (!art) continue;
+        const qty = Number(it.quantity) || 1;
+        const finalPrice = Number(art.finalPrice) || 0;
+        const lineTotal = Math.round(finalPrice * qty * 100) / 100;
+        resolvedItems.push({
+          articleId: art._id,
+          name: art.name,
+          unit: art.unit,
+          price: art.price,
+          vatPercent: art.vatPercent,
+          finalPrice,
+          quantity: qty,
+          lineTotal
+        });
+      }
+      updates.items = resolvedItems;
+    }
+
+    // apply updates using findById to ensure full document validators and hooks run predictably
+    const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
+
+    // set provided top-level fields
+    const allowed = ['name','service','address','email','phone','status','items'];
+    allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
+
+    await order.save();
     io.emit('orderUpdated', order);
     res.json({ message: "Order updated", order });
   } catch (err) {

@@ -39,10 +39,102 @@ function escapeHtml(str) {
 }
 
 /* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
+let articlesCache = [];
+
+async function loadArticlesCache() {
+  try {
+    const res = await fetch('/api/articles');
+    if (!res.ok) throw new Error('Failed to fetch articles');
+    articlesCache = await res.json();
+  } catch (err) {
+    console.error('Could not load articles', err);
+    articlesCache = [];
+  }
+}
+
+function createArticleSelect(selectedId) {
+  const sel = document.createElement('select');
+  sel.className = 'article-select';
+  const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '— Izberite artikel —';
+  sel.appendChild(emptyOpt);
+  articlesCache.forEach(a => {
+    const opt = document.createElement('option'); opt.value = a._id; opt.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
+    if (selectedId && String(selectedId) === String(a._id)) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+
+function renderOrderItems(container, items) {
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = '<i>Ni pozicij.</i>';
+    return;
+  }
+  const ul = document.createElement('div');
+  ul.className = 'order-items';
+  items.forEach(it => {
+    const row = document.createElement('div');
+    row.className = 'order-item';
+    const qty = it.quantity || 1;
+    const name = it.name || '(artikel)';
+    const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
+    row.innerHTML = `<strong>${escapeHtml(name)}</strong> — ${qty} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong>`;
+    ul.appendChild(row);
+  });
+  container.appendChild(ul);
+}
+
+async function addItemToOrder(orderId, orderEl) {
+  const sel = orderEl.querySelector('.article-select');
+  const qtyIn = orderEl.querySelector('.article-qty');
+  const articleId = sel ? sel.value : '';
+  const qty = Math.max(1, parseInt(qtyIn ? qtyIn.value : 1) || 1);
+  if (!articleId) { alert('Izberite artikel.'); return; }
+
+  const art = articlesCache.find(a => String(a._id) === String(articleId));
+  if (!art) { alert('Artikel ni na voljo.'); return; }
+
+  // read current items from dataset
+  let items = [];
+  try { items = JSON.parse(orderEl.dataset.items || '[]'); } catch(e){ items = []; }
+
+  // new item
+  const newItem = {
+    articleId: art._id,
+    name: art.name,
+    unit: art.unit,
+    price: art.price,
+    vatPercent: art.vatPercent,
+    finalPrice: art.finalPrice,
+    quantity: qty,
+    lineTotal: Math.round(art.finalPrice * qty * 100) / 100
+  };
+  items.push(newItem);
+
+  // send update to server
+  try {
+    const res = await fetch(`/order/${orderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
+    // refresh orders (server will also broadcast)
+    loadOrders();
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri dodajanju pozicije. Preverite konzolo.');
+  }
+}
+
 async function loadOrders() {
   const list = document.getElementById('ordersList');
   list.textContent = 'Nalaganje...';
   try {
+    // ensure articles loaded for select options
+    if (!articlesCache.length) await loadArticlesCache();
+
     const res = await fetch('/orders');
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();
@@ -53,6 +145,29 @@ async function loadOrders() {
       div.className = 'order ' + statusToClass(o.status);
       div.id = 'order-' + o._id;
       const created = o.createdAt ? formatDateISO(o.createdAt) : '';
+
+      // Prepare items container and dataset
+      const itemsContainer = document.createElement('div');
+      itemsContainer.className = 'items-container';
+      const currentItems = o.items || [];
+      div.dataset.items = JSON.stringify(currentItems);
+
+      // Render existing items
+      renderOrderItems(itemsContainer, currentItems);
+
+      // Add item form
+      const addWrap = document.createElement('div');
+      addWrap.className = 'add-item-wrap';
+      const articleSel = createArticleSelect();
+      articleSel.style.marginTop = '8px';
+      const qtyIn = document.createElement('input');
+      qtyIn.type = 'number'; qtyIn.min = '1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
+      qtyIn.style.width = '80px'; qtyIn.style.marginLeft = '8px';
+      const addBtn = document.createElement('button');
+      addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
+      addBtn.style.marginLeft = '8px';
+      addBtn.addEventListener('click', () => addItemToOrder(o._id, div));
+      addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
 
       const statusSelect = document.createElement('select');
       statusSelect.className = 'status-select';
@@ -75,6 +190,11 @@ async function loadOrders() {
         <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
       `;
+
+      // append items container and add form
+      div.appendChild(itemsContainer);
+      div.appendChild(addWrap);
+
       const controls = document.createElement('div');
       controls.appendChild(statusSelect);
       controls.appendChild(updateStatusBtn);
@@ -204,9 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
 
-  // customers autocomplete
-  loadCustomers().then(() => { setupCustomerAutocomplete(); });
-  loadOrders();
+  // customers autocomplete + articles cache then load orders
+  loadCustomers().then(() => {
+    setupCustomerAutocomplete();
+    return loadArticlesCache();
+  }).then(() => {
+    loadOrders();
+  });
 });
 
 let customersCache = [];
