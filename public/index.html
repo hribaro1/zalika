@@ -9,8 +9,6 @@
     #orders { margin-top: 24px; }
     .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; }
     .meta { color:#666; font-size:12px; }
-
-    /* Button styling: bigger and blue */
     #placeOrder {
       background: #007bff;
       color: #fff;
@@ -23,8 +21,8 @@
       transition: background 0.15s ease, transform 0.08s ease;
     }
     #placeOrder:hover { background: #0062cc; transform: translateY(-1px); }
-    #placeOrder:active { transform: translateY(0); }
-    #placeOrder:focus { outline: 3px solid rgba(0,123,255,0.25); }
+    .small-btn { padding:6px 10px; font-size:13px; margin-left:6px; border-radius:6px; cursor:pointer; }
+    .status-select { margin-top:8px; }
   </style>
 </head>
 <body>
@@ -48,6 +46,8 @@
   </div>
 
   <script>
+    const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
+
     function isValidEmail(email) {
       return /.+@.+\..+/.test(email);
     }
@@ -68,11 +68,40 @@
           const div = document.createElement('div');
           div.className = 'order';
           const created = o.createdAt ? new Date(o.createdAt).toLocaleString() : '';
+          
+          // Status select
+          const statusSelect = document.createElement('select');
+          statusSelect.className = 'status-select';
+          STATUS_OPTIONS.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            if (o.status === s) opt.selected = true;
+            statusSelect.appendChild(opt);
+          });
+
+          const updateStatusBtn = document.createElement('button');
+          updateStatusBtn.textContent = 'Posodobi status';
+          updateStatusBtn.className = 'small-btn';
+          updateStatusBtn.addEventListener('click', () => updateStatus(o._id, statusSelect.value));
+
+          const editBtn = document.createElement('button');
+          editBtn.textContent = 'Uredi';
+          editBtn.className = 'small-btn';
+          editBtn.addEventListener('click', () => editOrder(o));
+
           div.innerHTML = `
             <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
             <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
-            <div class="meta">Status: ${escapeHtml(o.status || 'Pending')}</div>
+            <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
           `;
+          // append controls
+          const controls = document.createElement('div');
+          controls.appendChild(statusSelect);
+          controls.appendChild(updateStatusBtn);
+          controls.appendChild(editBtn);
+          div.appendChild(controls);
+
           list.appendChild(div);
         });
       } catch (err) {
@@ -89,6 +118,65 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        const res = await fetch(`/order/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => null);
+          throw new Error(err && err.error ? err.error : 'Server error');
+        }
+        const data = await res.json();
+        document.getElementById(`status-${id}`).textContent = data.order.status;
+        alert('Status posodobljen.');
+      } catch (err) {
+        console.error(err);
+        alert('Napaka pri posodabljanju statusa. Preverite konzolo.');
+      }
+    }
+
+    async function editOrder(order) {
+      // Simple prompt-based edit (for demo). Could be replaced with modal/form.
+      const name = prompt('Ime:', order.name) || order.name;
+      const email = prompt('Email:', order.email) || order.email;
+      const address = prompt('Naslov:', order.address) || order.address;
+      const service = prompt('Storitev:', order.service) || order.service;
+      const status = prompt('Status (točno ime):', order.status) || order.status;
+
+      if (!name || !email || !address) {
+        alert('Ime, email in naslov morajo biti izpolnjeni.');
+        return;
+      }
+      if (!/.+@.+\..+/.test(email)) {
+        alert('Neveljaven email.');
+        return;
+      }
+      if (!STATUS_OPTIONS.includes(status)) {
+        alert('Neveljaven status. Dovoljeni so: ' + STATUS_OPTIONS.join(', '));
+        return;
+      }
+
+      try {
+        const res = await fetch(`/order/${order._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, address, service, status })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => null);
+          throw new Error(err && err.error ? err.error : 'Server error');
+        }
+        alert('Naročilo posodobljeno.');
+        loadOrders();
+      } catch (err) {
+        console.error(err);
+        alert('Napaka pri posodabljanju naročila. Preverite konzolo.');
+      }
     }
 
     async function order() {
@@ -113,11 +201,9 @@
         }
         const data = await res.json();
         alert(data.message || "Order placed!");
-        // Clear inputs
         document.getElementById("name").value = '';
         document.getElementById("email").value = '';
         document.getElementById("address").value = '';
-        // Refresh list
         loadOrders();
       } catch (err) {
         console.error(err);

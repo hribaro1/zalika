@@ -12,6 +12,8 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.log(err));
 
+const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
+
 const OrderSchema = new mongoose.Schema({
   name: String,
   service: String,
@@ -23,12 +25,12 @@ const OrderSchema = new mongoose.Schema({
     lowercase: true,
     match: [/.+@.+\..+/, 'Please enter a valid email address']
   },
-  status: { type: String, default: "Pending" }
+  status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" }
 }, { timestamps: true });
 
 const Order = mongoose.model("Order", OrderSchema);
 
-// Optional: homepage
+// Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -45,7 +47,7 @@ app.post("/order", async (req, res) => {
   }
 });
 
-// New: list orders (most recent first)
+// List orders (most recent first)
 app.get("/orders", async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 }).lean();
@@ -53,6 +55,38 @@ app.get("/orders", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+// Update whole order (name, email, address, service, status)
+app.put("/order/:id", async (req, res) => {
+  try {
+    const updates = req.body;
+    if (updates.status && !STATUS_OPTIONS.includes(updates.status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+    const order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json({ message: "Order updated", order });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || "Failed to update order" });
+  }
+});
+
+// Update only status
+app.patch("/order/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!STATUS_OPTIONS.includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true, runValidators: true });
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json({ message: "Status updated", order });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || "Failed to update status" });
   }
 });
 
