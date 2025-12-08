@@ -41,7 +41,6 @@ async function addCustomer() {
   try {
     const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    alert('Stranka dodana.');
     document.getElementById('c-name').value = '';
     document.getElementById('c-email').value = '';
     document.getElementById('c-phone').value = '';
@@ -56,7 +55,6 @@ async function deleteCustomer(id) {
   try {
     const res = await fetch('/api/customers/' + id, { method: 'DELETE' });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    alert('Stranka izbrisana.');
     loadCustomers();
   } catch (err) { console.error(err); alert('Napaka pri brisanju.'); }
 }
@@ -88,7 +86,7 @@ async function saveEdit() {
   try {
     const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    alert('Stranka posodobljena.'); closeEdit(); loadCustomers();
+    closeEdit(); loadCustomers();
   } catch (err) { console.error(err); alert('Napaka pri posodabljanju.'); }
 }
 

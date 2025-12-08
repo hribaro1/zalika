@@ -62,7 +62,6 @@ async function addArticle(){
       const msg = e && e.error ? e.error : 'Server error';
       throw new Error(msg);
     }
-    alert('Artikel dodan.');
     document.getElementById('a-name').value='';
     document.getElementById('a-unit').value='';
     document.getElementById('a-price').value='';
@@ -80,7 +79,6 @@ async function deleteArticle(id){
   try{
     const res = await fetch('/api/articles/' + id, { method: 'DELETE' });
     if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    alert('Artikel izbrisan.');
     loadArticles();
   }catch(err){ console.error(err); alert('Napaka pri brisanju artikla.'); }
 }
@@ -119,7 +117,6 @@ async function saveEdit(){
       body: JSON.stringify({ name, unit, price, vatPercent: vat })
     });
     if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    alert('Artikel posodobljen.');
     closeEdit();
     loadArticles();
   }catch(err){ console.error(err); alert('Napaka pri urejanju artikla.'); }

@@ -106,7 +106,6 @@ async function updateStatus(id, status) {
       // If element was removed (socket already reloaded list), refresh to ensure consistent UI
       loadOrders();
     }
-    alert('Status posodobljen.');
   } catch (err) {
     console.error(err);
     alert('Napaka pri posodabljanju statusa: ' + (err && err.message ? err.message : 'Neznana napaka') + '. Preverite konzolo za več.');
@@ -162,7 +161,6 @@ async function saveEdit() {
       body: JSON.stringify({ name, email, phone, address, service, status })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
-    alert('Naročilo posodobljeno.');
     closeEditModal();
     // server will broadcast; loadOrders() will run on other clients via socket, here refresh to be immediate
     loadOrders();
@@ -190,7 +188,6 @@ async function order() {
       body: JSON.stringify({ name, email, phone, address, service })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
-    alert('Naročilo sprejeto!');
     document.getElementById('name').value = '';
     document.getElementById('email').value = '';
     document.getElementById('phone').value = '';
