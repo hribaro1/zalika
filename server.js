@@ -25,6 +25,12 @@ const OrderSchema = new mongoose.Schema({
     lowercase: true,
     match: [/.+@.+\..+/, 'Please enter a valid email address']
   },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+    match: [/^[+\d\s\-().]{6,20}$/, 'Please enter a valid phone number']
+  },
   status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" }
 }, { timestamps: true });
 
@@ -58,7 +64,7 @@ app.get("/orders", async (req, res) => {
   }
 });
 
-// Update whole order (name, email, address, service, status)
+// Update whole order (name, email, phone, address, service, status)
 app.put("/order/:id", async (req, res) => {
   try {
     const updates = req.body;
