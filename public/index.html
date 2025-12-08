@@ -9,6 +9,22 @@
     #orders { margin-top: 24px; }
     .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; }
     .meta { color:#666; font-size:12px; }
+
+    /* Button styling: bigger and blue */
+    #placeOrder {
+      background: #007bff;
+      color: #fff;
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+    #placeOrder:hover { background: #0062cc; transform: translateY(-1px); }
+    #placeOrder:active { transform: translateY(0); }
+    #placeOrder:focus { outline: 3px solid rgba(0,123,255,0.25); }
   </style>
 </head>
 <body>
