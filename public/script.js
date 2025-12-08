@@ -1,5 +1,18 @@
 const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
 
+/* --- socket.io client --- */
+const socket = io();
+socket.on('connect', () => console.log('socket connected', socket.id));
+socket.on('orderCreated', (order) => {
+  console.log('orderCreated', order);
+  loadOrders(); // refresh list (simple approach)
+});
+socket.on('orderUpdated', (order) => {
+  console.log('orderUpdated', order);
+  loadOrders();
+});
+
+/* --- helper functions (same as before) --- */
 function isValidEmail(email) { return /.+@.+\..+/.test(email); }
 function isValidPhone(phone) { return /^[+\d\s\-().]{6,20}$/.test(phone); }
 function statusToClass(status) {
@@ -22,9 +35,10 @@ function escapeHtml(str) {
   if (!str && str !== 0) return '';
   return String(str)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;').replace(/'/g, '&#039;');
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
+/* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
 async function loadOrders() {
   const list = document.getElementById('ordersList');
   list.textContent = 'Nalaganje...';
@@ -71,7 +85,7 @@ async function loadOrders() {
     });
   } catch (err) {
     console.error(err);
-    list.innerHTML = '<span style=\"color:red\">Napaka pri nalaganju naročil.</span>';
+    list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
   }
 }
 
@@ -82,6 +96,7 @@ async function updateStatus(id, status) {
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     const data = await res.json();
+    // server will broadcast, but update UI immediately too
     document.getElementById(`status-${id}`).textContent = data.order.status;
     const orderEl = document.getElementById('order-' + id);
     if (orderEl) orderEl.className = 'order ' + statusToClass(data.order.status);
@@ -89,19 +104,17 @@ async function updateStatus(id, status) {
   } catch (err) { console.error(err); alert('Napaka pri posodabljanju statusa. Preverite konzolo.'); }
 }
 
-/* Modal: open/populate/close/save */
+/* Modal editing functions (same as previous implementation). Keep them here or import if you separated files. */
 function openEditModal(order) {
   const modal = document.getElementById('editModal');
+  if (!modal) { alert('Modal ni na voljo.'); return; }
   modal.setAttribute('aria-hidden', 'false'); modal.style.display = 'flex';
-  // populate fields
   document.getElementById('edit-name').value = order.name || '';
   document.getElementById('edit-email').value = order.email || '';
   document.getElementById('edit-phone').value = order.phone || '';
   document.getElementById('edit-address').value = order.address || '';
-  // service
   const srv = document.getElementById('edit-service');
   for (let i=0;i<srv.options.length;i++) { if (srv.options[i].value === order.service) { srv.selectedIndex = i; break; } }
-  // status options (populate if empty)
   const stat = document.getElementById('edit-status');
   stat.innerHTML = '';
   STATUS_OPTIONS.forEach(s => {
@@ -109,9 +122,7 @@ function openEditModal(order) {
     if (order.status === s) opt.selected = true;
     stat.appendChild(opt);
   });
-  // store editing id on modal element
   modal.dataset.editingId = order._id;
-  // focus first input
   document.getElementById('edit-name').focus();
 }
 
@@ -138,28 +149,20 @@ async function saveEdit() {
 
   try {
     const res = await fetch(`/order/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, phone, address, service, status })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     alert('Naročilo posodobljeno.');
     closeEditModal();
+    // server will broadcast; loadOrders() will run on other clients via socket, here refresh to be immediate
     loadOrders();
   } catch (err) {
     console.error(err); alert('Napaka pri posodabljanju naročila. Preverite konzolo.');
   }
 }
 
-/* Bind events */
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('placeOrder').addEventListener('click', order);
-  document.getElementById('edit-cancel').addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
-  document.getElementById('edit-save').addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
-  loadOrders();
-});
-
-/* place order function */
+/* place order and bindings */
 async function order() {
   const name = document.getElementById('name').value.trim();
   const email = document.getElementById('email').value.trim();
@@ -178,12 +181,22 @@ async function order() {
       body: JSON.stringify({ name, email, phone, address, service })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
-    const data = await res.json();
     alert('Naročilo sprejeto!');
     document.getElementById('name').value = '';
     document.getElementById('email').value = '';
     document.getElementById('phone').value = '';
     document.getElementById('address').value = '';
+    // server will broadcast; refresh locally too
     loadOrders();
   } catch (err) { console.error(err); alert('Napaka pri oddaji naročila. Preverite konzolo.'); }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const place = document.getElementById('placeOrder');
+  if (place) place.addEventListener('click', order);
+  const cancel = document.getElementById('edit-cancel');
+  const save = document.getElementById('edit-save');
+  if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
+  if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
+  loadOrders();
+});
