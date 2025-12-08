@@ -7,7 +7,7 @@
     body { font-family: Arial, sans-serif; margin: 20px; }
     input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width:100%; }
     #orders { margin-top: 24px; }
-    .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; }
+    .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; transition: background 0.15s ease, border-color 0.15s ease; }
     .meta { color:#666; font-size:12px; }
     #placeOrder {
       background: #007bff;
@@ -21,6 +21,14 @@
       transition: background 0.15s ease, transform 0.08s ease;
     }
     #placeOrder:hover { background: #0062cc; transform: translateY(-1px); }
+
+    /* Status barve: od rdeče → rumene → zelene */
+    .s-naroceno { background: #ffecec; border-left: 6px solid #ff4d4d; }
+    .s-sprejeto { background: #fff6e6; border-left: 6px solid #ffb84d; }
+    .s-v-delu { background: #fffde6; border-left: 6px solid #ffd11a; }
+    .s-koncano { background: #eaffeb; border-left: 6px solid #7ed37a; }
+    .s-oddano { background: #dff7df; border-left: 6px solid #39b54a; }
+
     .small-btn { padding:6px 10px; font-size:13px; margin-left:6px; border-radius:6px; cursor:pointer; }
     .status-select { margin-top:8px; }
   </style>
@@ -56,6 +64,26 @@
       return /^[+\d\s\-().]{6,20}$/.test(phone);
     }
 
+    function statusToClass(status) {
+      switch ((status || '').toLowerCase()) {
+        case 'naročeno':
+        case 'naroceno':
+          return 's-naroceno';
+        case 'sprejeto':
+          return 's-sprejeto';
+        case 'v delu':
+        case 'v-delu':
+          return 's-v-delu';
+        case 'končano':
+        case 'koncano':
+          return 's-koncano';
+        case 'oddano':
+          return 's-oddano';
+        default:
+          return '';
+      }
+    }
+
     async function loadOrders() {
       const list = document.getElementById('ordersList');
       list.textContent = 'Nalaganje...';
@@ -70,7 +98,8 @@
         list.innerHTML = '';
         orders.forEach(o => {
           const div = document.createElement('div');
-          div.className = 'order';
+          div.className = 'order ' + statusToClass(o.status);
+          div.id = 'order-' + o._id;
           const created = o.createdAt ? new Date(o.createdAt).toLocaleString() : '';
           
           // Status select
@@ -137,6 +166,8 @@
         }
         const data = await res.json();
         document.getElementById(`status-${id}`).textContent = data.order.status;
+        const orderEl = document.getElementById('order-' + id);
+        if (orderEl) orderEl.className = 'order ' + statusToClass(data.order.status);
         alert('Status posodobljen.');
       } catch (err) {
         console.error(err);
@@ -145,7 +176,6 @@
     }
 
     async function editOrder(order) {
-      // Simple prompt-based edit (for demo). Could be replaced with modal/form.
       const name = prompt('Ime:', order.name) || order.name;
       const email = prompt('Email:', order.email) || order.email;
       const phone = prompt('Telefon:', order.phone) || order.phone;
