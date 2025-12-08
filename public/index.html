@@ -100,7 +100,7 @@
           const div = document.createElement('div');
           div.className = 'order ' + statusToClass(o.status);
           div.id = 'order-' + o._id;
-          const created = o.createdAt ? new Date(o.createdAt).toLocaleString() : '';
+          const created = o.createdAt ? formatDateISO(o.createdAt) : '';
           
           // Status select
           const statusSelect = document.createElement('select');
@@ -257,6 +257,13 @@
 
     // Initial load
     loadOrders();
+
+    function formatDateISO(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
   </script>
 </body>
 </html>
