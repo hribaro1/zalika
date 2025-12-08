@@ -65,3 +65,14 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 .customer-actions { margin-top:8px; }
 .danger { background:#ff4d4d; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
 .small-input { width:220px; }
+/* Alternating row background for Articles and Customers lists */
+#articlesList > .order:nth-child(odd),
+#customersList > .customer:nth-child(odd) {
+  background: #e8f4ff; /* svetlo modra */
+}
+
+/* Reset za sodne vrstice (če želite drugačen kontrast) */
+#articlesList > .order:nth-child(even),
+#customersList > .customer:nth-child(even) {
+  background: transparent;
+}
