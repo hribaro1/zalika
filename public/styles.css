@@ -228,3 +228,21 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   #customersList .customer .customer-actions { justify-content: flex-start; gap:6px; }
   #customersList .customer .small-btn, #customersList .customer .danger { padding: 8px 10px; font-size: 13px; }
 }
+
+.customer-autocomplete { position: relative; max-width: 420px; }
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid rgba(30,60,90,0.08);
+  box-shadow: 0 8px 24px rgba(12,30,60,0.06);
+  border-radius: 8px;
+  z-index: 1200;
+  max-height: 280px;
+  overflow: auto;
+}
+.suggestion { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.03); }
+.suggestion:hover, .suggestion:focus { background: #f3f8ff; outline: none; }
+.suggestion .s-meta { color: #516b86; font-size: 12px; margin-top: 4px; }

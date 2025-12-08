@@ -74,6 +74,11 @@
     <option value="">— Izberite stranko —</option>
   </select>
 
+  <div class="customer-autocomplete">
+    <input id="customerInput" placeholder="Ime in priimek stranke" autocomplete="off" />
+    <div id="customerSuggestions" class="suggestions" aria-hidden="true"></div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>

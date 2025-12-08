@@ -171,11 +171,9 @@ async function saveEdit() {
 
 /* place order and bindings */
 async function order() {
-  const sel = document.getElementById('customerSelect');
-  const customerId = sel ? sel.value : '';
-  if (!customerId) return alert('Izberite stranko.');
-  const customer = customersCache.find(c => c._id === customerId);
-  if (!customer) return alert('Izbrana stranka ni na voljo. Osvežite stran in poskusite znova.');
+  if (!selectedCustomerId) return alert('Izberite stranko iz predlog.');
+  const customer = customersCache.find(c => c._id === selectedCustomerId);
+  if (!customer) return alert('Izbrana stranka ni na voljo. Osvežite stran.');
 
   const name = customer.name;
   const email = customer.email || '';
@@ -205,48 +203,85 @@ document.addEventListener('DOMContentLoaded', () => {
   const save = document.getElementById('edit-save');
   if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
-  loadCustomers();
-  bindCustomerSelect();
+
+  // customers autocomplete
+  loadCustomers().then(() => { setupCustomerAutocomplete(); });
   loadOrders();
 });
 
 let customersCache = [];
+let selectedCustomerId = null; // id trenutno izbrane stranke
 
 async function loadCustomers() {
   try {
     const res = await fetch('/api/customers');
     if (!res.ok) throw new Error('Failed to fetch customers');
     const customers = await res.json();
-    customersCache = customers; // shrani lokalno za kasnejše uporabo
-    const sel = document.getElementById('customerSelect');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— Izberite stranko —</option>';
-    customers.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c._id;
-      opt.textContent = `${c.name} (${c.email || c.phone || ''})`;
-      sel.appendChild(opt);
-    });
+    customersCache = customers; // shrani lokalno
   } catch (err) {
     console.error('Could not load customers', err);
   }
 }
 
-function bindCustomerSelect() {
-  const sel = document.getElementById('customerSelect');
-  if (!sel) return;
-  sel.addEventListener('change', () => {
-    const id = sel.value;
-    const c = customersCache.find(x => x._id === id);
-    if (c) {
-      document.getElementById('email').value = c.email || '';
-      document.getElementById('phone').value = c.phone || '';
-      document.getElementById('address').value = c.address || '';
-    } else {
-      // clear if no selection
-      document.getElementById('email').value = '';
-      document.getElementById('phone').value = '';
-      document.getElementById('address').value = '';
+// Renders suggestion items (up to max 8)
+function showCustomerSuggestions(list) {
+  const box = document.getElementById('customerSuggestions');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!list || !list.length) { box.setAttribute('aria-hidden', 'true'); return; }
+  const max = 8;
+  list.slice(0, max).forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'suggestion';
+    item.tabIndex = 0;
+    item.dataset.id = c._id;
+    item.innerHTML = `<strong>${escapeHtml(c.name)}</strong><div class="s-meta">${escapeHtml(c.email || '')}${c.phone ? ' • ' + escapeHtml(c.phone) : ''}</div>`;
+    item.addEventListener('click', () => chooseCustomer(c));
+    item.addEventListener('keydown', (e) => { if (e.key === 'Enter') chooseCustomer(c); });
+    box.appendChild(item);
+  });
+  box.setAttribute('aria-hidden', 'false');
+}
+
+// Called when user picks a suggestion
+function chooseCustomer(c) {
+  selectedCustomerId = c._id;
+  const input = document.getElementById('customerInput');
+  input.value = c.name || '';
+  document.getElementById('email').value = c.email || '';
+  document.getElementById('phone').value = c.phone || '';
+  document.getElementById('address').value = c.address || '';
+  // hide suggestions
+  const box = document.getElementById('customerSuggestions');
+  if (box) { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }
+}
+
+// Filter as user types
+function setupCustomerAutocomplete() {
+  const input = document.getElementById('customerInput');
+  const box = document.getElementById('customerSuggestions');
+  if (!input || !box) return;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    selectedCustomerId = null; // reset selection while typing
+    if (!q) { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); return; }
+    const filtered = customersCache.filter(c =>
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.email && c.email.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.toLowerCase().includes(q))
+    );
+    showCustomerSuggestions(filtered);
+  });
+
+  // hide suggestions on blur (delay to allow click)
+  input.addEventListener('blur', () => { setTimeout(() => { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }, 150); });
+
+  // show all on focus if empty (optional)
+  input.addEventListener('focus', () => {
+    if (!input.value.trim()) {
+      // show top recent customers
+      showCustomerSuggestions(customersCache.slice(0,8));
     }
   });
 }
