@@ -171,16 +171,20 @@ async function saveEdit() {
 
 /* place order and bindings */
 async function order() {
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const address = document.getElementById('address').value.trim();
+  const sel = document.getElementById('customerSelect');
+  const customerId = sel ? sel.value : '';
+  if (!customerId) return alert('Izberite stranko.');
+  const customer = customersCache.find(c => c._id === customerId);
+  if (!customer) return alert('Izbrana stranka ni na voljo. Osvežite stran in poskusite znova.');
+
+  const name = customer.name;
+  const email = customer.email || '';
+  const phone = customer.phone || '';
+  const address = customer.address || '';
   const service = document.getElementById('service').value;
 
-  if (!name) return alert('Vnesite ime.');
-  if (!email || !isValidEmail(email)) return alert('Vnesite veljaven email.');
-  if (!phone || !isValidPhone(phone)) return alert('Vnesite veljavno telefonsko številko.');
-  if (!address) return alert('Vnesite naslov.');
+  if (!email || !isValidEmail(email)) return alert('Izbrana stranka nima veljavnega e-poštnega naslova.');
+  if (!phone || !isValidPhone(phone)) return alert('Izbrana stranka nima veljavne telefonske številke.');
 
   try {
     const res = await fetch('/order', {
@@ -188,11 +192,8 @@ async function order() {
       body: JSON.stringify({ name, email, phone, address, service })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
-    document.getElementById('name').value = '';
-    document.getElementById('email').value = '';
-    document.getElementById('phone').value = '';
-    document.getElementById('address').value = '';
-    // server will broadcast; refresh locally too
+    // clear selection (optional) — pustimo izbrano stranko izbran
+    // osveži seznam naročil
     loadOrders();
   } catch (err) { console.error(err); alert('Napaka pri oddaji naročila. Preverite konzolo.'); }
 }
@@ -204,5 +205,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const save = document.getElementById('edit-save');
   if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
+  loadCustomers();
+  bindCustomerSelect();
   loadOrders();
 });
+
+let customersCache = [];
+
+async function loadCustomers() {
+  try {
+    const res = await fetch('/api/customers');
+    if (!res.ok) throw new Error('Failed to fetch customers');
+    const customers = await res.json();
+    customersCache = customers; // shrani lokalno za kasnejše uporabo
+    const sel = document.getElementById('customerSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Izberite stranko —</option>';
+    customers.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c._id;
+      opt.textContent = `${c.name} (${c.email || c.phone || ''})`;
+      sel.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('Could not load customers', err);
+  }
+}
+
+function bindCustomerSelect() {
+  const sel = document.getElementById('customerSelect');
+  if (!sel) return;
+  sel.addEventListener('change', () => {
+    const id = sel.value;
+    const c = customersCache.find(x => x._id === id);
+    if (c) {
+      document.getElementById('email').value = c.email || '';
+      document.getElementById('phone').value = c.phone || '';
+      document.getElementById('address').value = c.address || '';
+    } else {
+      // clear if no selection
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('address').value = '';
+    }
+  });
+}
