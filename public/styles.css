@@ -284,3 +284,80 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 .add-item-wrap { margin-top: 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .article-select { min-width: 220px; }
 .article-qty { padding:6px; border-radius:6px; border:1px solid #e2e8f0; width:80px; }
+/* Make articles cards match customers cards (size, padding, shadows) */
+#articlesList .order {
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border: 1px solid rgba(30,60,90,0.05);
+  box-shadow: 0 8px 24px rgba(12,30,60,0.06);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: none; /* remove lift animation */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 56px; /* ensure similar visual height as customer cards */
+  box-sizing: border-box;
+}
+
+/* Remove hover lift for article cards too */
+#articlesList .order:hover {
+  transform: none;
+  box-shadow: 0 8px 24px rgba(12,30,60,0.06);
+}
+
+/* Make article action buttons same as customers' buttons (height, outline, no hover lift) */
+#articlesList .order .small-btn,
+#articlesList .order button {
+  background: #f4f6f8;            /* light gray */
+  color: #223648;
+  border: 1px solid rgba(30,60,90,0.06);
+  box-shadow: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: none;               /* remove hover animations */
+  outline: 2px solid #000;        /* black outline to match customers */
+  outline-offset: 0;
+  height: 44px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+/* Keep hover visually identical (no lift) */
+#articlesList .order .small-btn:hover,
+#articlesList .order button:hover {
+  background: #f4f6f8;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Delete button variant in articles (consistent with customers) */
+#articlesList .order .danger {
+  background: #f4f6f8;
+  color: #b03030;
+  border: 1px solid rgba(200,80,80,0.08);
+  box-shadow: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  outline: 2px solid #000;       /* black outline */
+  outline-offset: 0;
+  height: 44px;
+  line-height: 20px;
+}
+
+/* Make article items (content) span same visual area */
+#articlesList .order .meta {
+  color: #4f6678;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Ensure add/delete action containers align like customers */
+#articlesList .order > div:last-child,
+#articlesList .order .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
