@@ -345,19 +345,17 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   line-height: 20px;
 }
 
-/* Make article items (content) span same visual area */
-#articlesList .order .meta {
-  color: #4f6678;
-  font-size: 13px;
-  margin-top: 2px;
+/* Make "Add Article" button same height/size as "Add Customer" */
+#addArticleBtn {
+  padding: 12px 18px;
+  font-size: 15px;
+  height: 46px;
+  line-height: 20px;
+  border-radius: 10px;
+  background: #f4f6f8;
+  color: #223648;
+  border: none;
+  box-shadow: none;
+  outline: 2px solid #000;
 }
-
-/* Ensure add/delete action containers align like customers */
-#articlesList .order > div:last-child,
-#articlesList .order .actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
+#addArticleBtn:hover { background: #f4f6f8; transform: none; box-shadow: none; }
