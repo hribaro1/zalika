@@ -1,8 +1,11 @@
+/* global */
 body { font-family: Arial, sans-serif; margin: 20px; }
 input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width:100%; }
 #orders { margin-top: 24px; }
 .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; transition: background 0.15s ease, border-color 0.15s ease; }
 .meta { color:#666; font-size:12px; }
+
+/* primary action */
 #placeOrder {
   background: #007bff;
   color: #fff;
@@ -16,7 +19,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 }
 #placeOrder:hover { background: #0062cc; transform: translateY(-1px); }
 
-/* Status barve: od rdeče → rumene → zelene */
+/* Status colors */
 .s-naroceno { background: #ffecec; border-left: 6px solid #ff4d4d; }
 .s-sprejeto { background: #fff6e6; border-left: 6px solid #ffb84d; }
 .s-v-delu { background: #fffde6; border-left: 6px solid #ffd11a; }
@@ -39,7 +42,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 }
 .modal[aria-hidden="true"] { display: none; }
 
-/* backdrop with subtle blur */
+/* backdrop */
 .modal::before {
   content: '';
   position: absolute;
@@ -49,7 +52,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   -webkit-backdrop-filter: blur(6px) saturate(120%);
 }
 
-/* Card */
+/* modal card */
 .modal-content {
   position: relative;
   background: linear-gradient(180deg, #ffffff, #fbfdff);
@@ -63,8 +66,6 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   transition: transform 180ms ease, opacity 180ms ease;
   opacity: 1;
 }
-
-/* header */
 .modal-header {
   display: flex;
   align-items: center;
@@ -72,93 +73,56 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   gap: 12px;
   margin-bottom: 12px;
 }
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #0b2540;
-}
-
-/* close button top-right in header */
+.modal-header h3 { margin: 0; font-size: 18px; color: #0b2540; }
 .modal-close {
-  background: transparent;
-  border: none;
-  color: #516b86;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
+  background: transparent; border: none; color: #516b86;
+  font-size: 18px; cursor: pointer; padding: 6px; border-radius: 6px;
 }
 .modal-close:hover { background: rgba(0,0,0,0.04); color: #223648; }
 
-/* body */
 .modal-body { padding-top: 6px; }
 .modal-body input, .modal-body select, .modal-body textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
-  margin: 8px 0 6px 0;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  transition: box-shadow 120ms ease, border-color 120ms ease;
+  width: 100%; box-sizing: border-box; padding: 10px 12px;
+  margin: 8px 0 6px 0; border-radius: 8px; border: 1px solid #e2e8f0;
+  background: #fff; transition: box-shadow 120ms ease, border-color 120ms ease;
   font-size: 14px;
 }
 .modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus {
-  outline: none;
-  border-color: #7aa7ff;
+  outline: none; border-color: #7aa7ff;
   box-shadow: 0 6px 18px rgba(30,100,220,0.08);
 }
+.modal-body .hint { color: #5b6b7a; font-size: 13px; margin-top: 6px; }
 
-/* small helper / meta text */
-.modal-body .hint {
-  color: #5b6b7a;
-  font-size: 13px;
-  margin-top: 6px;
-}
-
-/* actions */
 .modal-actions { margin-top: 14px; text-align: right; display:flex; justify-content:flex-end; gap:8px; }
-.modal-actions .small-btn {
-  padding:8px 12px;
-  border-radius:8px;
-  font-size:14px;
-}
+.modal-actions .small-btn { padding:8px 12px; border-radius:8px; font-size:14px; }
 .modal-actions .small-btn.primary {
-  background: #0b74ff;
-  color: #fff;
-  border: none;
+  background: #0b74ff; color: #fff; border: none;
   box-shadow: 0 6px 18px rgba(11,116,255,0.12);
 }
-.modal-actions .small-btn.secondary {
-  background: transparent;
-  color: #12324a;
-  border: 1px solid #dfe7ef;
-}
+.modal-actions .small-btn.secondary { background: transparent; color: #12324a; border: 1px solid #dfe7ef; }
 
 /* error state */
 .input-error { border-color: #ff6b6b !important; box-shadow: 0 4px 12px rgba(255,107,107,0.08); }
 .field-error { color: #c0392b; font-size:12px; margin-top:4px; }
 
-/* responsive */
+/* responsive modal */
 @media (max-width: 600px) {
   .modal-content { width: calc(100% - 24px); padding: 14px; border-radius: 10px; }
   .modal-header h3 { font-size: 16px; }
   .modal-actions { flex-direction: column-reverse; gap:6px; }
 }
 
-/* Alternating row background for Articles and Customers lists */
+/* Alternating rows */
 #articlesList > .order:nth-child(odd),
 #customersList > .customer:nth-child(odd) {
-  background: #e8f4ff; /* svetlo modra */
+  background: #e8f4ff;
 }
-
-/* Reset za sodne vrstice (če želite drugačen kontrast) */
 #articlesList > .order:nth-child(even),
 #customersList > .customer:nth-child(even) {
   background: transparent;
 }
 
-/* Customers — improved card look (aligned with articles design) */
+/* ---------- Customers: card + actions (base) ---------- */
 #customersList .customer {
   background: linear-gradient(180deg,#ffffff,#fbfdff);
   border: 1px solid rgba(30,60,90,0.05);
@@ -166,19 +130,16 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   padding: 12px 14px;
   border-radius: 10px;
   margin-bottom: 10px;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 120ms ease;
+  transition: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-/* Slight lift on hover (removed) */
-#customersList .customer:hover {
-  transform: none;
-  box-shadow: none;
-}
+/* remove lift */
+#customersList .customer:hover { transform: none; box-shadow: none; }
 
-/* Actions area */
+/* actions container */
 #customersList .customer .customer-actions {
   margin-top: 8px;
   display: flex;
@@ -187,27 +148,25 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   flex-wrap: wrap;
 }
 
-/* Customers action buttons: no hover lift, black outline */
+/* customer action buttons: light gray, outline, no hover lift */
 #customersList .customer .small-btn {
-  background: #f4f6f8;            /* light gray */
+  background: #f4f6f8;
   color: #223648;
   border: 1px solid rgba(30,60,90,0.06);
   box-shadow: none;
   padding: 10px 14px;
   border-radius: 8px;
-  transition: none;               /* remove hover animations */
-  outline: 2px solid #000;       /* black outline */
+  transition: none;
+  outline: 2px solid #000;
   outline-offset: 0;
+  height: 44px;
+  line-height: 20px;
 }
 
-/* keep hover visually identical (no lift) */
-#customersList .customer .small-btn:hover {
-  background: #f4f6f8;
-  transform: none;
-  box-shadow: none;
-}
+/* keep hover identical */
+#customersList .customer .small-btn:hover { background: #f4f6f8; transform: none; box-shadow: none; }
 
-/* Delete button variant (consistent but with black outline) */
+/* delete variant with black outline (non-aggressive) */
 #customersList .customer .danger {
   background: #f4f6f8;
   color: #b03030;
@@ -215,31 +174,28 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   box-shadow: none;
   padding: 10px 14px;
   border-radius: 8px;
-  outline: 2px solid #000;       /* black outline */
-  outline-offset: 0;
+  outline: 2px solid #000;
+  height: 44px;
+  line-height: 20px;
 }
-#customersList .customer .danger:hover {
-  background: #f4f6f8;
-  transform: none;
-  box-shadow: none;
-}
+#customersList .customer .danger:hover { background: #f4f6f8; transform: none; box-shadow: none; }
 
-/* Make the "Add customer" button light gray with black outline and taller */
+/* Add customer button: light gray, black outline, taller */
 #addCustomerBtn {
   padding: 12px 18px;
   font-size: 15px;
   height: 46px;
   line-height: 20px;
   border-radius: 10px;
-  background: #f4f6f8;            /* light gray */
+  background: #f4f6f8;
   color: #223648;
   border: none;
   box-shadow: none;
-  outline: 2px solid #000;       /* black outline */
+  outline: 2px solid #000;
 }
 #addCustomerBtn:hover { background: #f4f6f8; transform: none; box-shadow: none; }
 
-/* Danger button (delete) - consistent styling */
+/* (Legacy .danger fallback - kept minimal and without lift) */
 .danger {
   background: #f44336;
   color: #fff;
@@ -247,7 +203,6 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   border-radius: 8px;
   padding: 10px 14px;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.08s ease;
   display: inline-block;
   text-align: center;
   height: 44px;
@@ -255,12 +210,9 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   width: 100%;
   max-width: 160px;
 }
-.danger:hover {
-  background: #e53935;
-  transform: translateY(-1px);
-}
+.danger:hover { background: #f44336; transform: none; box-shadow: none; }
 
-/* Customer autocomplete dropdown */
+/* ---------- Autocomplete dropdown ---------- */
 .customer-autocomplete { position: relative; max-width: 420px; }
 .suggestions {
   position: absolute;
@@ -279,12 +231,14 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 .suggestion:hover, .suggestion:focus { background: #f3f8ff; outline: none; }
 .suggestion .s-meta { color: #516b86; font-size: 12px; margin-top: 4px; }
 
+/* ---------- Order items / add item UI ---------- */
 .order-items { margin-top: 8px; padding-left: 0; }
 .order-item { padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,0.6); margin-bottom:6px; font-size: 14px; }
 .add-item-wrap { margin-top: 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .article-select { min-width: 220px; }
 .article-qty { padding:6px; border-radius:6px; border:1px solid #e2e8f0; width:80px; }
-/* Make articles cards match customers cards (size, padding, shadows) */
+
+/* ---------- Articles view: make cards & buttons match customers ---------- */
 #articlesList .order {
   background: linear-gradient(180deg,#ffffff,#fbfdff);
   border: 1px solid rgba(30,60,90,0.05);
@@ -292,46 +246,37 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   padding: 12px 14px;
   border-radius: 10px;
   margin-bottom: 10px;
-  transition: none; /* remove lift animation */
+  transition: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-height: 56px; /* ensure similar visual height as customer cards */
+  min-height: 56px;
   box-sizing: border-box;
 }
 
-/* Remove hover lift for article cards too */
-#articlesList .order:hover {
-  transform: none;
-  box-shadow: 0 8px 24px rgba(12,30,60,0.06);
-}
+/* remove lift */
+#articlesList .order:hover { transform: none; box-shadow: 0 8px 24px rgba(12,30,60,0.06); }
 
-/* Make article action buttons same as customers' buttons (height, outline, no hover lift) */
+/* article buttons: same look as customer buttons */
 #articlesList .order .small-btn,
 #articlesList .order button {
-  background: #f4f6f8;            /* light gray */
+  background: #f4f6f8;
   color: #223648;
   border: 1px solid rgba(30,60,90,0.06);
   box-shadow: none;
   padding: 10px 14px;
   border-radius: 8px;
-  transition: none;               /* remove hover animations */
-  outline: 2px solid #000;        /* black outline to match customers */
+  transition: none;
+  outline: 2px solid #000;
   outline-offset: 0;
   height: 44px;
   line-height: 20px;
   cursor: pointer;
 }
-
-/* Keep hover visually identical (no lift) */
 #articlesList .order .small-btn:hover,
-#articlesList .order button:hover {
-  background: #f4f6f8;
-  transform: none;
-  box-shadow: none;
-}
+#articlesList .order button:hover { background: #f4f6f8; transform: none; box-shadow: none; }
 
-/* Delete button variant in articles (consistent with customers) */
+/* delete variant for articles */
 #articlesList .order .danger {
   background: #f4f6f8;
   color: #b03030;
@@ -339,13 +284,28 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   box-shadow: none;
   padding: 10px 14px;
   border-radius: 8px;
-  outline: 2px solid #000;       /* black outline */
-  outline-offset: 0;
+  outline: 2px solid #000;
   height: 44px;
   line-height: 20px;
 }
 
-/* Make "Add Article" button same height/size as "Add Customer" */
+/* ensure article meta styling */
+#articlesList .order .meta { color: #4f6678; font-size: 13px; margin-top: 2px; }
+
+/* actions container and spacing (match customers) */
+#articlesList .order > div:last-child,
+#articlesList .order .actions {
+  display: flex;
+  gap: 12px; /* increased gap between buttons */
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+/* extra safety: spacing between immediate sibling buttons */
+#articlesList .order button + button { margin-left: 12px; }
+
+/* Add Article button sizing to match Add Customer */
 #addArticleBtn {
   padding: 12px 18px;
   font-size: 15px;
