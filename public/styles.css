@@ -296,14 +296,14 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 #articlesList .order > div:last-child,
 #articlesList .order .actions {
   display: flex;
-  gap: 12px; /* increased gap between buttons */
+  gap: 6px; /* increased gap between buttons */
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
 
 /* extra safety: spacing between immediate sibling buttons */
-#articlesList .order button + button { margin-left: 12px; }
+#articlesList .order button + button { margin-left: 6px; }
 
 /* Add Article button sizing to match Add Customer */
 #addArticleBtn {
