@@ -172,10 +172,10 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   gap: 6px;
 }
 
-/* Slight lift on hover */
+/* Slight lift on hover (removed) */
 #customersList .customer:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(12,30,60,0.12);
+  transform: none;
+  box-shadow: none;
 }
 
 /* Meta line layout */
@@ -185,7 +185,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   margin-top: 2px;
 }
 
-/* Actions area aligned left on wide screens, wrapped on small */
+/* Actions area */
 #customersList .customer .customer-actions {
   margin-top: 8px;
   display: flex;
@@ -194,27 +194,27 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   flex-wrap: wrap;
 }
 
-/* Button styles (customers) — no hover lift, visible outline, slightly larger add button) */
+/* Customers action buttons: no hover lift, black outline */
 #customersList .customer .small-btn {
-  background: #f4f6f8;
+  background: #f4f6f8;            /* light gray */
   color: #223648;
   border: 1px solid rgba(30,60,90,0.06);
   box-shadow: none;
   padding: 10px 14px;
   border-radius: 8px;
-  transition: none; /* odstrani hover animacijo */
-  outline: 1px solid rgba(30,60,90,0.06); /* jasno obrobljenje */
+  transition: none;               /* remove hover animations */
+  outline: 2px solid #000;       /* black outline */
   outline-offset: 0;
 }
 
-/* hover no-op — izgled ostane enak, brez lift/transform */
+/* keep hover visually identical (no lift) */
 #customersList .customer .small-btn:hover {
   background: #f4f6f8;
   transform: none;
   box-shadow: none;
 }
 
-/* Danger / delete button variant — outline in rdeč napis (ne agresiven) */
+/* Delete button variant (consistent but with black outline) */
 #customersList .customer .danger {
   background: #f4f6f8;
   color: #b03030;
@@ -222,7 +222,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   box-shadow: none;
   padding: 10px 14px;
   border-radius: 8px;
-  outline: 1px solid rgba(200,80,80,0.08);
+  outline: 2px solid #000;       /* black outline */
   outline-offset: 0;
 }
 #customersList .customer .danger:hover {
@@ -231,19 +231,20 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   box-shadow: none;
 }
 
-/* Make the "Add customer" button a bit taller and more prominent */
+/* Make the "Add customer" button light gray with black outline and taller */
 #addCustomerBtn {
   padding: 12px 18px;
   font-size: 15px;
-  height: 44px;
+  height: 46px;
   line-height: 20px;
   border-radius: 10px;
-  background: #0b74ff;
-  color: #fff;
+  background: #f4f6f8;            /* light gray */
+  color: #223648;
   border: none;
-  box-shadow: 0 8px 24px rgba(11,116,255,0.10);
+  box-shadow: none;
+  outline: 2px solid #000;       /* black outline */
 }
-#addCustomerBtn:hover { transform: none; background: #0b74ff; box-shadow: 0 8px 24px rgba(11,116,255,0.10); }
+#addCustomerBtn:hover { background: #f4f6f8; transform: none; box-shadow: none; }
 
 /* Danger button (delete) - consistent styling */
 .danger {
