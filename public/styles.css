@@ -178,13 +178,6 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   box-shadow: none;
 }
 
-/* Meta line layout */
-#customersList .customer .meta {
-  color: #4f6678;
-  font-size: 13px;
-  margin-top: 2px;
-}
-
 /* Actions area */
 #customersList .customer .customer-actions {
   margin-top: 8px;
