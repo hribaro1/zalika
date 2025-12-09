@@ -16,7 +16,7 @@ async function loadCustomers() {
       const actions = document.createElement('div'); actions.className = 'customer-actions';
       const edit = document.createElement('button'); edit.textContent = 'Uredi'; edit.className = 'small-btn';
       edit.addEventListener('click', () => openEdit(c));
-      const del = document.createElement('button'); del.textContent = 'Izbriši'; del.className = 'danger';
+      const del = document.createElement('button'); del.textContent = 'Izbriši'; del.className = 'small-btn';
       del.addEventListener('click', () => deleteCustomer(c._id));
       actions.appendChild(edit); actions.appendChild(del);
       el.appendChild(actions);
@@ -41,6 +41,7 @@ async function addCustomer() {
   try {
     const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
+    // success: refresh list (no alert)
     document.getElementById('c-name').value = '';
     document.getElementById('c-email').value = '';
     document.getElementById('c-phone').value = '';
@@ -55,6 +56,7 @@ async function deleteCustomer(id) {
   try {
     const res = await fetch('/api/customers/' + id, { method: 'DELETE' });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
+    // success: refresh list
     loadCustomers();
   } catch (err) { console.error(err); alert('Napaka pri brisanju.'); }
 }
@@ -86,13 +88,17 @@ async function saveEdit() {
   try {
     const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
+    // success: close modal and refresh list (no alert)
     closeEdit(); loadCustomers();
   } catch (err) { console.error(err); alert('Napaka pri posodabljanju.'); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('addCustomerBtn').addEventListener('click', addCustomer);
-  document.getElementById('edit-cancel').addEventListener('click', (e) => { e.preventDefault(); closeEdit(); });
-  document.getElementById('edit-save').addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
+  const addBtn = document.getElementById('addCustomerBtn');
+  if (addBtn) addBtn.addEventListener('click', addCustomer);
+  const cancel = document.getElementById('edit-cancel');
+  const save = document.getElementById('edit-save');
+  if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEdit(); });
+  if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
   loadCustomers();
 });
