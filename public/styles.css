@@ -196,26 +196,30 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 
 /* Button styles */
 #customersList .customer .small-btn {
-  background: #0b74ff;
-  color: #fff;
-  border: none;
+  background: #f4f6f8;
+  color: #223648;
+  border: 1px solid rgba(30,60,90,0.06);
+  box-shadow: none;
   padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  box-shadow: 0 6px 18px rgba(11,116,255,0.08);
+  transition: background 0.12s ease, transform 0.08s ease;
 }
-#customersList .customer .small-btn:hover { transform: translateY(-2px); }
+#customersList .customer .small-btn:hover {
+  background: #e9eef5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(11,116,255,0.04);
+}
 
 /* Danger / delete button variant */
 #customersList .customer .danger {
-  background: #ff6b6b;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-left: 6px;
+  background: #f4f6f8;
+  color: #b03030;
+  border: 1px solid rgba(200,80,80,0.08);
+  box-shadow: none;
 }
-#customersList .customer .danger:hover { filter: brightness(0.95); }
+#customersList .customer .danger:hover {
+  background: #f6e9e9;
+  filter: none;
+}
 
 /* Make sure alternating rows still visible (keeps previous light-blue) */
 #customersList > .customer:nth-child(odd) {
