@@ -279,6 +279,11 @@ app.put("/order/:id", async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
+    // If updating status and no history, initialize
+    if (updates.status && (!order.statusHistory || order.statusHistory.length === 0)) {
+      order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
+    }
+
     // set provided top-level fields
     const allowed = ['name','service','address','email','phone','status','items'];
     allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
@@ -304,12 +309,14 @@ app.patch("/order/:id/status", async (req, res) => {
     if (!STATUS_OPTIONS.includes(status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status, $push: { statusHistory: { status, timestamp: new Date() } } },
-      { new: true } // do not run validators here to avoid failing when other required fields are missing
-    );
+    const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order.statusHistory || order.statusHistory.length === 0) {
+      order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
+    }
+    order.status = status;
+    order.statusHistory.push({ status, timestamp: new Date() });
+    await order.save();
     io.emit('orderUpdated', order);
     res.json({ message: "Status updated", order });
   } catch (err) {

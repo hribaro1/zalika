@@ -213,8 +213,9 @@ async function loadOrders() {
       }
 
       // Display status history
+      let historyDiv = null;
       if (o.statusHistory && o.statusHistory.length > 1) {
-        const historyDiv = document.createElement('div');
+        historyDiv = document.createElement('div');
         historyDiv.className = 'status-history';
         historyDiv.innerHTML = '<strong>Zgodovina statusa:</strong>';
         const ul = document.createElement('ul');
@@ -224,7 +225,6 @@ async function loadOrders() {
           ul.appendChild(li);
         });
         historyDiv.appendChild(ul);
-        itemsContainer.appendChild(historyDiv);
       }
 
       // Add item form
@@ -277,6 +277,8 @@ async function loadOrders() {
       controls.appendChild(editBtn);
       controls.appendChild(printBtn);
       div.appendChild(controls);
+
+      if (historyDiv) div.appendChild(historyDiv);
 
       list.appendChild(div);
     });

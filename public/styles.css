@@ -322,7 +322,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 
 .order-total { margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; text-align: right; }
 
-.status-history { margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 4px; }
+.status-history { margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 12px; }
 .status-history ul { margin: 5px 0 0 20px; padding: 0; }
 .status-history li { margin: 2px 0; }
 
@@ -345,6 +345,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   .order > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
   .order > div:last-child > * { flex: 1; min-width: 100px; }
   .add-item-wrap { flex-wrap: wrap; }
+  .status-history { font-size: 11px; }
 }
 }
 }
