@@ -183,7 +183,7 @@ async function loadOrders() {
     // ensure articles loaded for select options
     if (!articlesCache.length) await loadArticlesCache();
 
-    const url = window.location.pathname === '/archive' ? '/archive' : '/orders';
+    const url = window.location.pathname === '/archive' ? '/api/archive' : '/orders';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();

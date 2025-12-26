@@ -237,7 +237,7 @@ app.get("/orders", async (req, res) => {
 });
 
 // List archived orders
-app.get("/archive", async (req, res) => {
+app.get("/api/archive", async (req, res) => {
   try {
     const orders = await Order.find({status: "Oddano"}).sort({ createdAt: -1 }).lean();
     res.json(orders);
