@@ -8,6 +8,11 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Serve archive page
+app.get('/archive', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'archive.html'));
+});
+
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
