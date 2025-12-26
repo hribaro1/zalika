@@ -56,10 +56,14 @@ function generateOrderPDF(order) {
   if (order.items && order.items.length) {
     doc.text('Pozicije:', 20, y);
     y += 10;
+    let total = 0;
     order.items.forEach(item => {
       doc.text(`${item.name} - ${item.quantity} × ${item.finalPrice} € = ${item.lineTotal} €`, 20, y);
+      total += item.lineTotal || 0;
       y += 10;
     });
+    y += 10;
+    doc.text(`Skupni znesek: ${total.toFixed(2)} €`, 20, y);
   }
   doc.save(`narocilo-${order._id}.pdf`);
 }
@@ -189,6 +193,15 @@ async function loadOrders() {
 
       // Render existing items
       renderOrderItems(itemsContainer, currentItems);
+
+      // Calculate and display total
+      const total = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
+      if (total > 0) {
+        const totalDiv = document.createElement('div');
+        totalDiv.className = 'order-total';
+        totalDiv.innerHTML = `<strong>Skupni znesek: ${total.toFixed(2)} €</strong>`;
+        itemsContainer.appendChild(totalDiv);
+      }
 
       // Add item form
       const addWrap = document.createElement('div');
