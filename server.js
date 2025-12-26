@@ -225,14 +225,25 @@ app.post("/order", async (req, res) => {
   }
 });
 
-// List orders (most recent first)
+// List orders (most recent first, excluding archived)
 app.get("/orders", async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 }).lean();
+    const orders = await Order.find({status: {$ne: "Oddano"}}).sort({ createdAt: -1 }).lean();
     res.json(orders);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+// List archived orders
+app.get("/archive", async (req, res) => {
+  try {
+    const orders = await Order.find({status: "Oddano"}).sort({ createdAt: -1 }).lean();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch archived orders" });
   }
 });
 

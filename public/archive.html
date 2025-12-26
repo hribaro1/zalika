@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prihranite čas — mi likamo za vas!</title>
+  <title>Arhiv naročil</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,28 +14,10 @@
     <a href="/archive">Arhiv</a>
   </nav>
 
-  <h1>Sprejem naročila</h1>
-
-  <!-- Customer autocomplete: typeahead dropdown that filters while typing -->
-  <div class="customer-autocomplete">
-    <input id="customerInput" placeholder="Ime in priimek stranke" autocomplete="off" />
-    <div id="customerSuggestions" class="suggestions" aria-hidden="true"></div>
-  </div>
-
-  <input id="email" placeholder="E-pošta" />
-  <input id="phone" placeholder="Telefonska številka" />
-  <input id="address" placeholder="Naslov" />
-  
-  <select id="service">
-    <option>Likanje</option>
-    <option>Pranje in likanje</option>
-    <option>Čistilnica</option>
-  </select>
-
-  <button id="placeOrder">Potrditev naročila</button>
+  <h1>Arhiv naročil</h1>
 
   <div id="orders">
-    <h2>Pregled naročil</h2>
+    <h2>Arhivirana naročila</h2>
     <div id="ordersList">Nalaganje...</div>
   </div>
 
@@ -82,4 +64,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-

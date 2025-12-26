@@ -183,7 +183,8 @@ async function loadOrders() {
     // ensure articles loaded for select options
     if (!articlesCache.length) await loadArticlesCache();
 
-    const res = await fetch('/orders');
+    const url = window.location.pathname === '/archive' ? '/archive' : '/orders';
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();
     if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; return; }
