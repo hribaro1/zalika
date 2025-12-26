@@ -1,5 +1,7 @@
 const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
 
+const { jsPDF } = window.jspdf;
+
 /* --- socket.io client --- */
 const socket = io();
 socket.on('connect', () => console.log('socket connected', socket.id));
@@ -36,6 +38,30 @@ function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function generateOrderPDF(order) {
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('Naročilo', 20, 20);
+  doc.setFontSize(12);
+  doc.text(`Ime: ${order.name}`, 20, 40);
+  doc.text(`E-pošta: ${order.email}`, 20, 50);
+  doc.text(`Telefon: ${order.phone}`, 20, 60);
+  doc.text(`Naslov: ${order.address}`, 20, 70);
+  doc.text(`Storitev: ${order.service}`, 20, 80);
+  doc.text(`Status: ${order.status}`, 20, 90);
+  doc.text(`Datum: ${order.createdAt ? formatDateISO(order.createdAt) : ''}`, 20, 100);
+  let y = 110;
+  if (order.items && order.items.length) {
+    doc.text('Pozicije:', 20, y);
+    y += 10;
+    order.items.forEach(item => {
+      doc.text(`${item.name} - ${item.quantity} × ${item.finalPrice} € = ${item.lineTotal} €`, 20, y);
+      y += 10;
+    });
+  }
+  doc.save(`narocilo-${order._id}.pdf`);
 }
 
 /* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
@@ -194,6 +220,10 @@ async function loadOrders() {
       editBtn.textContent = 'Uredi'; editBtn.className = 'small-btn';
       editBtn.addEventListener('click', () => openEditModal(o));
 
+      const printBtn = document.createElement('button');
+      printBtn.textContent = 'Natisni PDF'; printBtn.className = 'small-btn';
+      printBtn.addEventListener('click', () => generateOrderPDF(o));
+
       div.innerHTML = `
         <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
         <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
@@ -208,6 +238,7 @@ async function loadOrders() {
       controls.appendChild(statusSelect);
       controls.appendChild(updateStatusBtn);
       controls.appendChild(editBtn);
+      controls.appendChild(printBtn);
       div.appendChild(controls);
 
       list.appendChild(div);
