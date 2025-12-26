@@ -42,38 +42,38 @@ function escapeHtml(str) {
 
 function generateOrderPDF(order) {
   const doc = new jsPDF();
-  doc.setFont('georgia', 'normal');
-  doc.setFontSize(16);
-  doc.text('Naročilo', 20, 20);
-  doc.setFontSize(10);
-  doc.text(`Št. naročila: ${order.orderNumber || ''}`, 20, 30);
-  doc.text(`Ime: ${order.name}`, 20, 40);
-  doc.text(`E-pošta: ${order.email}`, 20, 50);
-  doc.text(`Telefon: ${order.phone}`, 20, 60);
-  doc.text(`Naslov: ${order.address}`, 20, 70);
-  doc.text(`Storitev: ${order.service}`, 20, 80);
-  doc.text(`Status: ${order.status}`, 20, 90);
-  doc.text(`Datum: ${order.createdAt ? formatDateISO(order.createdAt) : ''}`, 20, 100);
-  let y = 110;
+  doc.setFont('arial', 'normal');
+  doc.setFontSize(14);
+  doc.text('Narocilo', 10, 20);
+  doc.setFontSize(9);
+  doc.text(`St. narocila: ${order.orderNumber || ''}`, 10, 30);
+  doc.text(`Ime: ${order.name}`, 10, 38);
+  doc.text(`E-posta: ${order.email}`, 10, 46);
+  doc.text(`Telefon: ${order.phone}`, 10, 54);
+  doc.text(`Naslov: ${order.address}`, 10, 62);
+  doc.text(`Storitev: ${order.service}`, 10, 70);
+  doc.text(`Status: ${order.status}`, 10, 78);
+  doc.text(`Datum: ${order.createdAt ? formatDateISO(order.createdAt) : ''}`, 10, 86);
+  let y = 94;
   if (order.items && order.items.length) {
-    doc.text('Pozicije:', 20, y);
-    y += 10;
+    doc.text('Pozicije:', 10, y);
+    y += 8;
     let total = 0;
     order.items.forEach(item => {
-      doc.text(`${item.name} - ${item.quantity} × ${item.finalPrice} € = ${item.lineTotal} €`, 20, y);
+      doc.text(`${item.name} - ${item.quantity} x ${item.finalPrice} € = ${item.lineTotal} €`, 10, y);
       total += item.lineTotal || 0;
-      y += 10;
+      y += 8;
     });
-    y += 10;
-    doc.text(`Skupni znesek: ${total.toFixed(2)} €`, 20, y);
-    y += 20;
+    y += 8;
+    doc.text(`Skupni znesek: ${total.toFixed(2)} €`, 10, y);
+    y += 16;
   }
   if (order.statusHistory && order.statusHistory.length) {
-    doc.text('Zgodovina statusa:', 20, y);
-    y += 10;
+    doc.text('Zgodovina statusa:', 10, y);
+    y += 8;
     order.statusHistory.forEach(h => {
-      doc.text(`${h.status} - ${formatDateISO(h.timestamp)}`, 20, y);
-      y += 10;
+      doc.text(`${h.status} - ${formatDateISO(h.timestamp)}`, 10, y);
+      y += 8;
     });
   }
   doc.save(`narocilo-${order._id}.pdf`);
