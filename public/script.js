@@ -130,7 +130,15 @@ async function addItemToOrder(orderId, orderEl) {
 
 async function loadOrders() {
   const list = document.getElementById('ordersList');
-  const savedScrollY = window.scrollY; // Save current scroll position
+  // Save the ID of the topmost visible order
+  let topOrderId = null;
+  const orderDivs = list.querySelectorAll('.order');
+  for (let div of orderDivs) {
+    if (div.getBoundingClientRect().top >= 0) {
+      topOrderId = div.id.replace('order-', '');
+      break;
+    }
+  }
   list.textContent = 'Nalaganje...';
   try {
     // ensure articles loaded for select options
@@ -139,7 +147,7 @@ async function loadOrders() {
     const res = await fetch('/orders');
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();
-    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; setTimeout(() => window.scrollTo(0, savedScrollY), 0); return; }
+    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; return; }
     list.innerHTML = '';
     orders.forEach(o => {
       const div = document.createElement('div');
@@ -204,8 +212,13 @@ async function loadOrders() {
 
       list.appendChild(div);
     });
-    // Restore scroll position after re-rendering
-    setTimeout(() => window.scrollTo(0, savedScrollY), 0);
+    // Scroll to the previously topmost visible order
+    if (topOrderId) {
+      const targetDiv = document.getElementById('order-' + topOrderId);
+      if (targetDiv) {
+        targetDiv.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
+    }
   } catch (err) {
     console.error(err);
     list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
