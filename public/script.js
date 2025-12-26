@@ -42,6 +42,7 @@ function escapeHtml(str) {
 
 function generateOrderPDF(order) {
   const doc = new jsPDF();
+  doc.setFont('times', 'normal');
   doc.setFontSize(16);
   doc.text('Naročilo', 20, 20);
   doc.setFontSize(10);
