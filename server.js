@@ -23,6 +23,20 @@ mongoose.connect(process.env.MONGO_URI)
 
 const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
 
+async function generateOrderNumber() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const count = await Order.countDocuments({
+    createdAt: {
+      $gte: new Date(year, now.getMonth(), 1),
+      $lt: new Date(year, now.getMonth() + 1, 1)
+    }
+  });
+  const seq = String(count + 1).padStart(3, '0');
+  return `${year}-${month}-${seq}`;
+}
+
 // --- Orders schema (z dodatkom items) ---
 const OrderSchema = new mongoose.Schema({
   name: String,
@@ -46,6 +60,7 @@ const OrderSchema = new mongoose.Schema({
     status: { type: String, enum: STATUS_OPTIONS },
     timestamp: { type: Date, default: Date.now }
   }],
+  orderNumber: { type: String, unique: true },
   items: [{
     articleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Article' },
     name: String,
@@ -220,6 +235,7 @@ app.get("/", (req, res) => {
 app.post("/order", async (req, res) => {
   try {
     const order = new Order(req.body);
+    order.orderNumber = await generateOrderNumber();
     order.statusHistory = [{ status: order.status, timestamp: new Date() }];
     await order.save();
     io.emit('orderCreated', order);

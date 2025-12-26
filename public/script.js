@@ -45,6 +45,7 @@ function generateOrderPDF(order) {
   doc.setFontSize(16);
   doc.text('Naročilo', 20, 20);
   doc.setFontSize(10);
+  doc.text(`Št. naročila: ${order.orderNumber || ''}`, 20, 30);
   doc.text(`Ime: ${order.name}`, 20, 40);
   doc.text(`E-pošta: ${order.email}`, 20, 50);
   doc.text(`Telefon: ${order.phone}`, 20, 60);
@@ -264,6 +265,7 @@ async function loadOrders() {
 
       div.innerHTML = `
         <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
+        <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
         <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
       `;
