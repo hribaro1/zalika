@@ -139,7 +139,7 @@ async function loadOrders() {
     const res = await fetch('/orders');
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();
-    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; window.scrollTo(0, savedScrollY); return; }
+    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; setTimeout(() => window.scrollTo(0, savedScrollY), 0); return; }
     list.innerHTML = '';
     orders.forEach(o => {
       const div = document.createElement('div');
@@ -205,7 +205,7 @@ async function loadOrders() {
       list.appendChild(div);
     });
     // Restore scroll position after re-rendering
-    window.scrollTo(0, savedScrollY);
+    setTimeout(() => window.scrollTo(0, savedScrollY), 0);
   } catch (err) {
     console.error(err);
     list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
