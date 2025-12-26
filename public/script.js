@@ -64,6 +64,15 @@ function generateOrderPDF(order) {
     });
     y += 10;
     doc.text(`Skupni znesek: ${total.toFixed(2)} €`, 20, y);
+    y += 20;
+  }
+  if (order.statusHistory && order.statusHistory.length) {
+    doc.text('Zgodovina statusa:', 20, y);
+    y += 10;
+    order.statusHistory.forEach(h => {
+      doc.text(`${h.status} - ${formatDateISO(h.timestamp)}`, 20, y);
+      y += 10;
+    });
   }
   doc.save(`narocilo-${order._id}.pdf`);
 }
@@ -201,6 +210,21 @@ async function loadOrders() {
         totalDiv.className = 'order-total';
         totalDiv.innerHTML = `<strong>Skupni znesek: ${total.toFixed(2)} €</strong>`;
         itemsContainer.appendChild(totalDiv);
+      }
+
+      // Display status history
+      if (o.statusHistory && o.statusHistory.length > 1) {
+        const historyDiv = document.createElement('div');
+        historyDiv.className = 'status-history';
+        historyDiv.innerHTML = '<strong>Zgodovina statusa:</strong>';
+        const ul = document.createElement('ul');
+        o.statusHistory.forEach(h => {
+          const li = document.createElement('li');
+          li.textContent = `${h.status} - ${formatDateISO(h.timestamp)}`;
+          ul.appendChild(li);
+        });
+        historyDiv.appendChild(ul);
+        itemsContainer.appendChild(historyDiv);
       }
 
       // Add item form

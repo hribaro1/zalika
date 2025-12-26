@@ -37,6 +37,10 @@ const OrderSchema = new mongoose.Schema({
     match: [/^[+\d\s\-().]{6,20}$/, 'Please enter a valid phone number']
   },
   status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" },
+  statusHistory: [{
+    status: { type: String, enum: STATUS_OPTIONS },
+    timestamp: { type: Date, default: Date.now }
+  }],
   items: [{
     articleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Article' },
     name: String,
@@ -211,6 +215,7 @@ app.get("/", (req, res) => {
 app.post("/order", async (req, res) => {
   try {
     const order = new Order(req.body);
+    order.statusHistory = [{ status: order.status, timestamp: new Date() }];
     await order.save();
     io.emit('orderCreated', order);
     res.json({ message: "Order placed!", order });
@@ -278,6 +283,11 @@ app.put("/order/:id", async (req, res) => {
     const allowed = ['name','service','address','email','phone','status','items'];
     allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
 
+    // If status changed, add to history
+    if (updates.status && updates.status !== order.status) {
+      order.statusHistory.push({ status: updates.status, timestamp: new Date() });
+    }
+
     await order.save();
     io.emit('orderUpdated', order);
     res.json({ message: "Order updated", order });
@@ -296,7 +306,7 @@ app.patch("/order/:id/status", async (req, res) => {
     }
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { status },
+      { status, $push: { statusHistory: { status, timestamp: new Date() } } },
       { new: true } // do not run validators here to avoid failing when other required fields are missing
     );
     if (!order) return res.status(404).json({ error: "Order not found" });
