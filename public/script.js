@@ -130,6 +130,7 @@ async function addItemToOrder(orderId, orderEl) {
 
 async function loadOrders() {
   const list = document.getElementById('ordersList');
+  const savedScrollY = window.scrollY; // Save current scroll position
   list.textContent = 'Nalaganje...';
   try {
     // ensure articles loaded for select options
@@ -138,7 +139,7 @@ async function loadOrders() {
     const res = await fetch('/orders');
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();
-    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; return; }
+    if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; window.scrollTo(0, savedScrollY); return; }
     list.innerHTML = '';
     orders.forEach(o => {
       const div = document.createElement('div');
@@ -203,6 +204,8 @@ async function loadOrders() {
 
       list.appendChild(div);
     });
+    // Restore scroll position after re-rendering
+    window.scrollTo(0, savedScrollY);
   } catch (err) {
     console.error(err);
     list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
