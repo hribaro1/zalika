@@ -264,8 +264,8 @@ async function loadOrders() {
       printBtn.addEventListener('click', () => generateOrderPDF(o));
 
       div.innerHTML = `
-        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
         <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
+        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
         <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
       `;
