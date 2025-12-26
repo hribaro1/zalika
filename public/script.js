@@ -44,7 +44,7 @@ function generateOrderPDF(order) {
   const doc = new jsPDF();
   doc.setFontSize(16);
   doc.text('Naročilo', 20, 20);
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.text(`Ime: ${order.name}`, 20, 40);
   doc.text(`E-pošta: ${order.email}`, 20, 50);
   doc.text(`Telefon: ${order.phone}`, 20, 60);
@@ -109,7 +109,7 @@ function renderOrderItems(container, items) {
     const qty = it.quantity || 1;
     const name = it.name || '(artikel)';
     const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
-    row.innerHTML = `<strong>${escapeHtml(name)}</strong> — ${qty} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong>`;
+    row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qty} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
     ul.appendChild(row);
   });
   container.appendChild(ul);
