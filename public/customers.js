@@ -12,19 +12,11 @@ async function loadCustomers() {
     list.innerHTML = '';
     customers.forEach(c => {
       const el = document.createElement('div'); el.className = 'customer'; el.id = 'cust-' + c._id;
-      el.style.display = 'flex';
-      el.style.justifyContent = 'space-between';
-      el.style.alignItems = 'center';
+      el.style.cursor = 'pointer';
       const textDiv = document.createElement('div');
       textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''}</div>`;
       el.appendChild(textDiv);
-      const actions = document.createElement('div'); actions.className = 'customer-actions';
-      const edit = document.createElement('button'); edit.textContent = 'Uredi'; edit.className = 'small-btn';
-      edit.addEventListener('click', () => openEdit(c));
-      const del = document.createElement('button'); del.textContent = 'Izbriši'; del.className = 'small-btn';
-      del.addEventListener('click', () => deleteCustomer(c._id));
-      actions.appendChild(edit); actions.appendChild(del);
-      el.appendChild(actions);
+      el.addEventListener('click', () => openEdit(c));
       list.appendChild(el);
     });
   } catch (err) {
@@ -103,7 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addBtn) addBtn.addEventListener('click', addCustomer);
   const cancel = document.getElementById('edit-cancel');
   const save = document.getElementById('edit-save');
+  const del = document.getElementById('edit-delete');
   if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEdit(); });
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
+  if (del) del.addEventListener('click', (e) => { e.preventDefault(); const modal = document.getElementById('custEditModal'); deleteCustomer(modal.dataset.editingId); closeEdit(); });
   loadCustomers();
 });
