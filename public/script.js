@@ -279,7 +279,7 @@ async function loadOrders() {
 
       // append items container and add form
       div.appendChild(itemsContainer);
-      div.appendChild(addWrap);
+      if (window.location.pathname !== '/archive') div.appendChild(addWrap);
 
       const controls = document.createElement('div');
       controls.appendChild(statusSelect);
