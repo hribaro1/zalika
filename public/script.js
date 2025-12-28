@@ -430,9 +430,7 @@ async function saveEdit() {
   const service = document.getElementById('edit-service').value;
   const status = document.getElementById('edit-status').value;
 
-  if (!name || !email || !phone || !address) { alert('Ime, email, telefon in naslov morajo biti izpolnjeni.'); return; }
-  if (!isValidEmail(email)) { alert('Neveljaven email.'); return; }
-  if (!isValidPhone(phone)) { alert('Neveljavna telefonska številka.'); return; }
+  if (!name) { alert('Ime mora biti izpolnjeno.'); return; }
 
   try {
     const res = await fetch(`/order/${id}`, {
