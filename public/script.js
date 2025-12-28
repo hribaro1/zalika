@@ -446,7 +446,7 @@ function showCustomerSuggestions(list) {
   if (!box) return;
   box.innerHTML = '';
   if (!list || !list.length) { box.setAttribute('aria-hidden', 'true'); return; }
-  const max = 8;
+  const max = list.length;
   list.slice(0, max).forEach(c => {
     const item = document.createElement('div');
     item.className = 'suggestion';
@@ -484,9 +484,7 @@ function setupCustomerAutocomplete() {
     selectedCustomerId = null; // reset selection while typing
     if (!q) { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); return; }
     const filtered = customersCache.filter(c =>
-      (c.name && c.name.toLowerCase().includes(q)) ||
-      (c.email && c.email.toLowerCase().includes(q)) ||
-      (c.phone && c.phone.toLowerCase().includes(q))
+      (c.name && String(c.name).toLowerCase().includes(q))
     );
     showCustomerSuggestions(filtered);
   });
@@ -497,8 +495,7 @@ function setupCustomerAutocomplete() {
   // show all on focus if empty (optional)
   input.addEventListener('focus', () => {
     if (!input.value.trim()) {
-      // show top recent customers
-      showCustomerSuggestions(customersCache.slice(0,8));
+      showCustomerSuggestions(customersCache);
     }
   });
 }
