@@ -397,9 +397,6 @@ async function order() {
   const address = customer.address || '';
   const service = document.getElementById('service').value;
 
-  if (!email || !isValidEmail(email)) return alert('Izbrana stranka nima veljavnega e-poštnega naslova.');
-  if (!phone || !isValidPhone(phone)) return alert('Izbrana stranka nima veljavne telefonske številke.');
-
   try {
     const res = await fetch('/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

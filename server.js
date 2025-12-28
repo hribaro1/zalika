@@ -44,16 +44,12 @@ const OrderSchema = new mongoose.Schema({
   address: String,
   email: {
     type: String,
-    required: true,
     trim: true,
-    lowercase: true,
-    match: [/.+@.+\..+/, 'Please enter a valid email address']
+    lowercase: true
   },
   phone: {
     type: String,
-    required: true,
-    trim: true,
-    match: [/^[+\d\s\-().]{6,20}$/, 'Please enter a valid phone number']
+    trim: true
   },
   status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" },
   statusHistory: [{
