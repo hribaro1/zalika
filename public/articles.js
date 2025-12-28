@@ -1,9 +1,11 @@
 // articles.js
 const socket = io();
 socket.on('connect', () => console.log('socket connected', socket.id));
-socket.on('articleCreated', () => loadArticles());
-socket.on('articleUpdated', () => loadArticles());
-socket.on('articleDeleted', () => loadArticles());
+socket.on('articleCreated', () => loadArticlesCache().then(applyFilterArticles));
+socket.on('articleUpdated', () => loadArticlesCache().then(applyFilterArticles));
+socket.on('articleDeleted', () => loadArticlesCache().then(applyFilterArticles));
+
+let articlesCache = [];
 
 function escapeHtml(s){ if(!s && s !== 0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -13,30 +15,40 @@ function computeFinal(price, vat){
   return Math.round((p * (1 + v/100)) * 100) / 100; 
 }
 
-async function loadArticles(){
-  const list = document.getElementById('articlesList');
-  list.textContent = 'Nalaganje...';
-  try{
+async function loadArticlesCache() {
+  try {
     const res = await fetch('/api/articles');
-    if(!res.ok) throw new Error('Network error');
+    if (!res.ok) throw new Error('Failed to fetch articles');
     const articles = await res.json();
-    if(!articles.length){ list.innerHTML = '<i>Ni artiklov.</i>'; return; }
-    list.innerHTML = '';
-    articles.forEach(a => {
-      const el = document.createElement('div');
-      el.className = 'order';
-      el.id = 'art-' + a._id;
-      el.style.cursor = 'pointer';
-      const textDiv = document.createElement('div');
-      textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
-      el.appendChild(textDiv);
-      el.addEventListener('click', () => openEdit(a));
-      list.appendChild(el);
-    });
-  } catch(err){
-    console.error(err);
-    list.innerHTML = '<span style="color:red">Napaka pri nalaganju artiklov.</span>';
+    articlesCache = articles; // shrani lokalno
+  } catch (err) {
+    console.error('Could not load articles', err);
   }
+}
+
+function renderArticles(articles) {
+  const list = document.getElementById('articlesList');
+  if (!articles.length) { list.innerHTML = '<i>Ni artiklov.</i>'; return; }
+  list.innerHTML = '';
+  articles.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'order';
+    el.id = 'art-' + a._id;
+    el.style.cursor = 'pointer';
+    const textDiv = document.createElement('div');
+    textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
+    el.appendChild(textDiv);
+    el.addEventListener('click', () => openEdit(a));
+    list.appendChild(el);
+  });
+}
+
+function applyFilterArticles() {
+  const q = document.getElementById('articleSearch').value.trim().toLowerCase();
+  const filtered = articlesCache.filter(a =>
+    (a.name && String(a.name).toLowerCase().includes(q))
+  );
+  renderArticles(filtered);
 }
 
 async function addArticle(){
@@ -64,7 +76,7 @@ async function addArticle(){
     document.getElementById('a-price').value='';
     document.getElementById('a-vat').value='';
     document.getElementById('a-final').textContent = '0.00 €';
-    loadArticles();
+    loadArticlesCache().then(applyFilterArticles);
   }catch(err){
     console.error(err);
     alert('Napaka pri dodajanju artikla: ' + (err.message || 'neznana napaka'));
@@ -76,7 +88,7 @@ async function deleteArticle(id){
   try{
     const res = await fetch('/api/articles/' + id, { method: 'DELETE' });
     if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    loadArticles();
+    loadArticlesCache().then(applyFilterArticles);
   }catch(err){ console.error(err); alert('Napaka pri brisanju artikla.'); }
 }
 
@@ -115,7 +127,7 @@ async function saveEdit(){
     });
     if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
     closeEdit();
-    loadArticles();
+    loadArticlesCache().then(applyFilterArticles);
   }catch(err){ console.error(err); alert('Napaka pri urejanju artikla.'); }
 }
 
@@ -140,5 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('edit-a-cancel').addEventListener('click', (e)=>{ e.preventDefault(); closeEdit(); });
   document.getElementById('edit-a-save').addEventListener('click', (e)=>{ e.preventDefault(); saveEdit(); });
   document.getElementById('edit-a-delete').addEventListener('click', (e)=>{ e.preventDefault(); const modal = document.getElementById('articleEditModal'); deleteArticle(modal.dataset.editingId); closeEdit(); });
-  loadArticles();
+  const search = document.getElementById('articleSearch');
+  if (search) search.addEventListener('input', applyFilterArticles);
+  loadArticlesCache().then(() => renderArticles(articlesCache));
 });
