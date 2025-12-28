@@ -20,6 +20,7 @@ async function loadArticles(){
     const res = await fetch('/api/articles');
     if(!res.ok) throw new Error('Network error');
     const articles = await res.json();
+    articles.sort((a, b) => b.name.localeCompare(a.name));
     if(!articles.length){ list.innerHTML = '<i>Ni artiklov.</i>'; return; }
     list.innerHTML = '';
     articles.forEach(a => {
