@@ -74,8 +74,8 @@ const Order = mongoose.model("Order", OrderSchema);
 // --- Customers (stranke) model + API ---
 const CustomerSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, trim: true, lowercase: true, match: [/.+@.+\..+/, 'Please enter a valid email address'] },
-  phone: { type: String, required: true, trim: true, match: [/^[+\d\s\-().]{6,20}$/, 'Please enter a valid phone number'] },
+  email: { type: String, trim: true, lowercase: true },
+  phone: { type: String, trim: true },
   address: { type: String },
   notes: { type: String }
 }, { timestamps: true });
