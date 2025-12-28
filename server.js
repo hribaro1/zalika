@@ -77,7 +77,9 @@ const CustomerSchema = new mongoose.Schema({
   email: { type: String, trim: true, lowercase: true },
   phone: { type: String, trim: true },
   address: { type: String },
-  notes: { type: String }
+  notes: { type: String },
+  type: { type: String, enum: ['physical', 'company'], default: 'physical' },
+  paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' }
 }, { timestamps: true });
 
 const Customer = mongoose.model('Customer', CustomerSchema);

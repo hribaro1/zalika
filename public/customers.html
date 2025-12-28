@@ -8,7 +8,7 @@
 </head>
 <body>
   <nav class="main-nav">
-    <a href="/">Domov</a> |
+    <a href="/">Naročila</a> |
     <a href="/customers">Stranke</a> |
     <a href="/articles">Artikli</a> |
     <a href="/archive">Arhiv</a>
@@ -22,6 +22,14 @@
     <input id="c-email" placeholder="E-pošta" />
     <input id="c-phone" placeholder="Telefonska številka" />
     <input id="c-address" placeholder="Naslov (opcijsko)" />
+    <select id="c-type">
+      <option value="physical">Fizična oseba</option>
+      <option value="company">Podjetje</option>
+    </select>
+    <select id="c-payment">
+      <option value="cash">Gotovina</option>
+      <option value="invoice">Na račun</option>
+    </select>
     <input id="c-notes" placeholder="Opombe (opcijsko)" />
     <button id="addCustomerBtn">Dodaj stranko</button>
   </section>
@@ -41,6 +49,14 @@
         <input id="edit-c-email" placeholder="E-pošta" />
         <input id="edit-c-phone" placeholder="Telefonska številka" />
         <input id="edit-c-address" placeholder="Naslov" />
+        <select id="edit-c-type">
+          <option value="physical">Fizična oseba</option>
+          <option value="company">Podjetje</option>
+        </select>
+        <select id="edit-c-payment">
+          <option value="cash">Gotovina</option>
+          <option value="invoice">Na račun</option>
+        </select>
         <input id="edit-c-notes" placeholder="Opombe" />
       </div>
       <div class="modal-actions">

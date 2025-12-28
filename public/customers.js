@@ -21,7 +21,9 @@ function renderCustomers(customers) {
     const el = document.createElement('div'); el.className = 'customer'; el.id = 'cust-' + c._id;
     el.style.cursor = 'pointer';
     const textDiv = document.createElement('div');
-    textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''}</div>`;
+    const typeLabel = c.type === 'company' ? 'Podjetje' : 'Fizična oseba';
+    const paymentLabel = c.paymentMethod === 'invoice' ? 'Na račun' : 'Gotovina';
+    textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''} • ${typeLabel} • ${paymentLabel}</div>`;
     el.appendChild(textDiv);
     el.addEventListener('click', () => openEdit(c));
     list.appendChild(el);
@@ -43,10 +45,12 @@ async function addCustomer() {
   const email = document.getElementById('c-email').value.trim();
   const phone = document.getElementById('c-phone').value.trim();
   const address = document.getElementById('c-address').value.trim();
+  const type = document.getElementById('c-type').value;
+  const paymentMethod = document.getElementById('c-payment').value;
   const notes = document.getElementById('c-notes').value.trim();
   if (!name) return alert('Vnesite ime.');
   try {
-    const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, notes }) });
+    const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
     // success: refresh list (no alert)
     document.getElementById('c-name').value = '';
@@ -76,6 +80,8 @@ function openEdit(c) {
   document.getElementById('edit-c-email').value = c.email || '';
   document.getElementById('edit-c-phone').value = c.phone || '';
   document.getElementById('edit-c-address').value = c.address || '';
+  document.getElementById('edit-c-type').value = c.type || 'physical';
+  document.getElementById('edit-c-payment').value = c.paymentMethod || 'cash';
   document.getElementById('edit-c-notes').value = c.notes || '';
 }
 
@@ -88,10 +94,12 @@ async function saveEdit() {
   const email = document.getElementById('edit-c-email').value.trim();
   const phone = document.getElementById('edit-c-phone').value.trim();
   const address = document.getElementById('edit-c-address').value.trim();
+  const type = document.getElementById('edit-c-type').value;
+  const paymentMethod = document.getElementById('edit-c-payment').value;
   const notes = document.getElementById('edit-c-notes').value.trim();
   if (!name) return alert('Vnesite ime.');
   try {
-    const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, notes }) });
+    const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
     // success: close modal and refresh list (no alert)
     closeEdit(); loadCustomersCache().then(applyFilter);
