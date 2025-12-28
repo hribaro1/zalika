@@ -110,6 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
   if (del) del.addEventListener('click', (e) => { e.preventDefault(); const modal = document.getElementById('custEditModal'); deleteCustomer(modal.dataset.editingId); closeEdit(); });
   const search = document.getElementById('customerSearch');
-  if (search) search.addEventListener('input', applyFilter);
+  if (search) search.addEventListener('keyup', applyFilter);
   loadCustomersCache().then(() => renderCustomers(customersCache));
 });
