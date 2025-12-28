@@ -128,7 +128,7 @@ app.get('/articles', (req, res) => {
 // Customers API
 app.get('/api/customers', async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ createdAt: -1 }).lean();
+    const customers = await Customer.find().sort({ createdAt: 1 }).lean();
     res.json(customers);
   } catch (err) {
     console.error(err);
@@ -175,7 +175,7 @@ app.delete('/api/customers/:id', async (req, res) => {
 // Articles API
 app.get('/api/articles', async (req, res) => {
   try {
-    const articles = await Article.find().sort({ createdAt: -1 }).lean();
+    const articles = await Article.find().sort({ createdAt: 1 }).lean();
     res.json(articles);
   } catch (err) {
     console.error(err);

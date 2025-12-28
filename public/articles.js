@@ -20,14 +20,18 @@ async function loadArticles(){
     const res = await fetch('/api/articles');
     if(!res.ok) throw new Error('Network error');
     const articles = await res.json();
-    articles.sort((a, b) => b.name.localeCompare(a.name));
     if(!articles.length){ list.innerHTML = '<i>Ni artiklov.</i>'; return; }
     list.innerHTML = '';
     articles.forEach(a => {
       const el = document.createElement('div');
       el.className = 'order';
       el.id = 'art-' + a._id;
-      el.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
+      el.style.display = 'flex';
+      el.style.justifyContent = 'space-between';
+      el.style.alignItems = 'center';
+      const textDiv = document.createElement('div');
+      textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
+      el.appendChild(textDiv);
       const actions = document.createElement('div');
       const edit = document.createElement('button'); edit.textContent = 'Uredi'; edit.className = 'small-btn';
       edit.addEventListener('click', () => openEdit(a));

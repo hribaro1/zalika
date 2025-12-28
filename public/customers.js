@@ -12,7 +12,12 @@ async function loadCustomers() {
     list.innerHTML = '';
     customers.forEach(c => {
       const el = document.createElement('div'); el.className = 'customer'; el.id = 'cust-' + c._id;
-      el.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''}</div>`;
+      el.style.display = 'flex';
+      el.style.justifyContent = 'space-between';
+      el.style.alignItems = 'center';
+      const textDiv = document.createElement('div');
+      textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''}</div>`;
+      el.appendChild(textDiv);
       const actions = document.createElement('div'); actions.className = 'customer-actions';
       const edit = document.createElement('button'); edit.textContent = 'Uredi'; edit.className = 'small-btn';
       edit.addEventListener('click', () => openEdit(c));
