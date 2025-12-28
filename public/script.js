@@ -119,6 +119,27 @@ function createArticleSelect(selectedId) {
   suggestions.style.width = '100%';
   container.appendChild(input);
   container.appendChild(suggestions);
+  input.addEventListener('focus', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) {
+      const filtered = articlesCache.slice(0, 20); // show first 20
+      suggestions.innerHTML = '';
+      filtered.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'article-suggestion';
+        item.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
+        item.style.padding = '5px';
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', () => {
+          input.value = a.name;
+          container.dataset.selectedId = a._id;
+          suggestions.style.display = 'none';
+        });
+        suggestions.appendChild(item);
+      });
+      suggestions.style.display = filtered.length ? 'block' : 'none';
+    }
+  });
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (!q) {
@@ -126,7 +147,7 @@ function createArticleSelect(selectedId) {
       container.dataset.selectedId = '';
       return;
     }
-    const filtered = articlesCache.filter(a => a.name && String(a.name).toLowerCase().includes(q));
+    const filtered = articlesCache.filter(a => a.name && String(a.name).toLowerCase().includes(q)).slice(0, 20);
     suggestions.innerHTML = '';
     filtered.forEach(a => {
       const item = document.createElement('div');
