@@ -100,16 +100,58 @@ async function loadArticlesCache() {
 }
 
 function createArticleSelect(selectedId) {
-  const sel = document.createElement('select');
-  sel.className = 'article-select';
-  const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '— Izberite artikel —';
-  sel.appendChild(emptyOpt);
-  articlesCache.forEach(a => {
-    const opt = document.createElement('option'); opt.value = a._id; opt.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
-    if (selectedId && String(selectedId) === String(a._id)) opt.selected = true;
-    sel.appendChild(opt);
+  const container = document.createElement('div');
+  container.className = 'article-select-container';
+  container.style.position = 'relative';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'article-input';
+  input.placeholder = 'Išči artikel...';
+  const suggestions = document.createElement('div');
+  suggestions.className = 'article-suggestions';
+  suggestions.style.display = 'none';
+  suggestions.style.position = 'absolute';
+  suggestions.style.background = 'white';
+  suggestions.style.border = '1px solid #ccc';
+  suggestions.style.maxHeight = '200px';
+  suggestions.style.overflowY = 'auto';
+  suggestions.style.zIndex = '1000';
+  suggestions.style.width = '100%';
+  container.appendChild(input);
+  container.appendChild(suggestions);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) {
+      suggestions.style.display = 'none';
+      container.dataset.selectedId = '';
+      return;
+    }
+    const filtered = articlesCache.filter(a => a.name && String(a.name).toLowerCase().includes(q));
+    suggestions.innerHTML = '';
+    filtered.forEach(a => {
+      const item = document.createElement('div');
+      item.className = 'article-suggestion';
+      item.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
+      item.style.padding = '5px';
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        input.value = a.name;
+        container.dataset.selectedId = a._id;
+        suggestions.style.display = 'none';
+      });
+      suggestions.appendChild(item);
+    });
+    suggestions.style.display = filtered.length ? 'block' : 'none';
   });
-  return sel;
+  input.addEventListener('blur', () => setTimeout(() => suggestions.style.display = 'none', 150));
+  if (selectedId) {
+    const art = articlesCache.find(a => String(a._id) === String(selectedId));
+    if (art) {
+      input.value = art.name;
+      container.dataset.selectedId = art._id;
+    }
+  }
+  return container;
 }
 
 function renderOrderItems(container, items) {
@@ -133,9 +175,9 @@ function renderOrderItems(container, items) {
 }
 
 async function addItemToOrder(orderId, orderEl) {
-  const sel = orderEl.querySelector('.article-select');
+  const container = orderEl.querySelector('.article-select-container');
   const qtyIn = orderEl.querySelector('.article-qty');
-  const articleId = sel ? sel.value : '';
+  const articleId = container ? container.dataset.selectedId : '';
   const qty = Math.max(1, parseInt(qtyIn ? qtyIn.value : 1) || 1);
   if (!articleId) { alert('Izberite artikel.'); return; }
 
