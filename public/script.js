@@ -435,6 +435,7 @@ async function loadCustomers() {
     if (!res.ok) throw new Error('Failed to fetch customers');
     const customers = await res.json();
     customersCache = customers; // shrani lokalno
+    customersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } catch (err) {
     console.error('Could not load customers', err);
   }

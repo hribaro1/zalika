@@ -21,6 +21,7 @@ async function loadArticlesCache() {
     if (!res.ok) throw new Error('Failed to fetch articles');
     const articles = await res.json();
     articlesCache = articles; // shrani lokalno
+    articlesCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } catch (err) {
     console.error('Could not load articles', err);
   }
