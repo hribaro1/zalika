@@ -26,19 +26,11 @@ async function loadArticles(){
       const el = document.createElement('div');
       el.className = 'order';
       el.id = 'art-' + a._id;
-      el.style.display = 'flex';
-      el.style.justifyContent = 'space-between';
-      el.style.alignItems = 'center';
+      el.style.cursor = 'pointer';
       const textDiv = document.createElement('div');
       textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
       el.appendChild(textDiv);
-      const actions = document.createElement('div');
-      const edit = document.createElement('button'); edit.textContent = 'Uredi'; edit.className = 'small-btn';
-      edit.addEventListener('click', () => openEdit(a));
-      const del = document.createElement('button'); del.textContent = 'Izbriši'; del.className = 'small-btn';
-      del.addEventListener('click', () => deleteArticle(a._id));
-      actions.appendChild(edit); actions.appendChild(del);
-      el.appendChild(actions);
+      el.addEventListener('click', () => openEdit(a));
       list.appendChild(el);
     });
   } catch(err){
@@ -147,5 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('edit-a-vat').addEventListener('input', updateEditFinal);
   document.getElementById('edit-a-cancel').addEventListener('click', (e)=>{ e.preventDefault(); closeEdit(); });
   document.getElementById('edit-a-save').addEventListener('click', (e)=>{ e.preventDefault(); saveEdit(); });
+  document.getElementById('edit-a-delete').addEventListener('click', (e)=>{ e.preventDefault(); const modal = document.getElementById('articleEditModal'); deleteArticle(modal.dataset.editingId); closeEdit(); });
   loadArticles();
 });
