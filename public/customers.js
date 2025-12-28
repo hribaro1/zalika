@@ -2,10 +2,13 @@ function isValidEmail(email) { return /.+@.+\..+/.test(email); }
 function isValidPhone(phone) { return /^[+\d\s\-().]{6,20}$/.test(phone); }
 
 async function loadCustomersCache() {
+  console.log('loadCustomersCache called');
   try {
     const res = await fetch('/api/customers');
+    console.log('fetch response ok:', res.ok);
     if (!res.ok) throw new Error('Failed to fetch customers');
     const customers = await res.json();
+    console.log('customers loaded:', customers.length);
     customersCache = customers; // shrani lokalno
   } catch (err) {
     console.error('Could not load customers', err);
@@ -13,6 +16,7 @@ async function loadCustomersCache() {
 }
 
 function renderCustomers(customers) {
+  console.log('renderCustomers called with', customers.length, 'customers');
   const list = document.getElementById('customersList');
   if (!customers.length) { list.innerHTML = '<i>Ni še strank.</i>'; return; }
   list.innerHTML = '';
@@ -29,12 +33,14 @@ function renderCustomers(customers) {
 
 function applyFilter() {
   const q = document.getElementById('customerSearch').value.trim().toLowerCase();
+  console.log('applyFilter called with q:', q);
   const filtered = customersCache.filter(c =>
     (c.name && c.name.toLowerCase().includes(q)) ||
     (c.email && c.email.toLowerCase().includes(q)) ||
     (c.phone && c.phone.toLowerCase().includes(q)) ||
     (c.address && c.address.toLowerCase().includes(q))
   );
+  console.log('filtered length:', filtered.length);
   renderCustomers(filtered);
 }
 
@@ -101,6 +107,7 @@ async function saveEdit() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOMContentLoaded');
   const addBtn = document.getElementById('addCustomerBtn');
   if (addBtn) addBtn.addEventListener('click', addCustomer);
   const cancel = document.getElementById('edit-cancel');
@@ -110,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
   if (del) del.addEventListener('click', (e) => { e.preventDefault(); const modal = document.getElementById('custEditModal'); deleteCustomer(modal.dataset.editingId); closeEdit(); });
   const search = document.getElementById('customerSearch');
+  console.log('search element:', search);
   if (search) search.addEventListener('input', applyFilter);
   loadCustomersCache().then(() => renderCustomers(customersCache));
 });
