@@ -122,7 +122,7 @@ function createArticleSelect(selectedId) {
   input.addEventListener('focus', () => {
     const q = input.value.trim().toLowerCase();
     if (!q) {
-      const filtered = articlesCache.slice(0, 20); // show first 20
+      const filtered = articlesCache;
       suggestions.innerHTML = '';
       filtered.forEach(a => {
         const item = document.createElement('div');
@@ -147,7 +147,7 @@ function createArticleSelect(selectedId) {
       container.dataset.selectedId = '';
       return;
     }
-    const filtered = articlesCache.filter(a => a.name && String(a.name).toLowerCase().includes(q)).slice(0, 20);
+    const filtered = articlesCache.filter(a => a.name && String(a.name).toLowerCase().includes(q));
     suggestions.innerHTML = '';
     filtered.forEach(a => {
       const item = document.createElement('div');
