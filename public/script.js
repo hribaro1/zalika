@@ -320,10 +320,9 @@ async function loadOrders() {
         if (o.status === s) opt.selected = true;
         statusSelect.appendChild(opt);
       });
-
-      const updateStatusBtn = document.createElement('button');
-      updateStatusBtn.textContent = 'Posodobi status'; updateStatusBtn.className = 'small-btn';
-      updateStatusBtn.addEventListener('click', () => updateStatus(o._id, statusSelect.value));
+      
+      // Update status immediately when dropdown changes
+      statusSelect.addEventListener('change', () => updateStatus(o._id, statusSelect.value));
 
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Uredi'; editBtn.className = 'small-btn';
@@ -346,7 +345,6 @@ async function loadOrders() {
 
       const controls = document.createElement('div');
       controls.appendChild(statusSelect);
-      controls.appendChild(updateStatusBtn);
       controls.appendChild(editBtn);
       controls.appendChild(printBtn);
       div.appendChild(controls);
