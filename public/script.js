@@ -103,6 +103,8 @@ function createArticleSelect(selectedId) {
   const container = document.createElement('div');
   container.className = 'article-select-container';
   container.style.position = 'relative';
+  container.style.maxWidth = '250px';
+  container.style.flex = '1';
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'article-input';
@@ -331,7 +333,7 @@ async function loadOrders() {
       editBtn.addEventListener('click', () => openEditModal(o));
 
       const printBtn = document.createElement('button');
-      printBtn.textContent = 'Natisni PDF'; printBtn.className = 'small-btn';
+      printBtn.textContent = 'Izpis naročila'; printBtn.className = 'small-btn';
       printBtn.addEventListener('click', () => generateOrderPDF(o));
 
       div.innerHTML = `
