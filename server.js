@@ -27,14 +27,21 @@ async function generateOrderNumber() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const count = await Order.countDocuments({
-    createdAt: {
-      $gte: new Date(year, now.getMonth(), 1),
-      $lt: new Date(year, now.getMonth() + 1, 1)
-    }
-  });
-  const seq = String(count + 1).padStart(3, '0');
-  return `${year}-${month}-${seq}`;
+  
+  // Find the highest order number for current month
+  const prefix = `${year}-${month}-`;
+  const lastOrder = await Order.findOne({
+    orderNumber: { $regex: `^${prefix}` }
+  }).sort({ orderNumber: -1 }).limit(1);
+  
+  let seq = 1;
+  if (lastOrder && lastOrder.orderNumber) {
+    // Extract sequence number from last order
+    const lastSeq = parseInt(lastOrder.orderNumber.split('-')[2]);
+    seq = lastSeq + 1;
+  }
+  
+  return `${year}-${month}-${String(seq).padStart(3, '0')}`;
 }
 
 // --- Orders schema (z dodatkom items) ---
