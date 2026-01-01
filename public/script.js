@@ -7,7 +7,8 @@ const socket = io();
 socket.on('connect', () => console.log('socket connected', socket.id));
 socket.on('orderCreated', (order) => {
   console.log('orderCreated', order);
-  loadOrders(); // refresh list (simple approach)
+  // On remote update, scroll to the newly created order but don't override local preserveScrollPosition
+  loadOrders(true, order._id);
 });
 socket.on('orderUpdated', (order) => {
   console.log('orderUpdated', order);
