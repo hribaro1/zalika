@@ -103,7 +103,7 @@ function createArticleSelect(selectedId) {
   const container = document.createElement('div');
   container.className = 'article-select-container';
   container.style.position = 'relative';
-  container.style.width = '400px';
+  container.style.width = '300px';
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'article-input';
