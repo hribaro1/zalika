@@ -112,6 +112,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   .modal-content { width: calc(100% - 24px); padding: 14px; border-radius: 10px; }
   .modal-header h3 { font-size: 16px; }
   .modal-actions { flex-direction: column-reverse; gap:6px; }
+  .modal-actions .small-btn { width: 100%; }
 }
 
 /* Alternating rows */

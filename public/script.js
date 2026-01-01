@@ -14,6 +14,10 @@ socket.on('orderUpdated', (order) => {
   console.log('orderUpdated', order);
   loadOrders();
 });
+socket.on('orderDeleted', (data) => {
+  console.log('orderDeleted', data);
+  loadOrders();
+});
 
 /* --- helper functions (same as before) --- */
 function isValidEmail(email) { return /.+@.+\..+/.test(email); }
