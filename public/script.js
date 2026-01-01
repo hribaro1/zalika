@@ -472,7 +472,15 @@ async function order() {
       body: JSON.stringify({ name, email, phone, address, service })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
-    // clear selection (optional) — pustimo izbrano stranko izbran
+    
+    // Clear all input fields after successful order
+    document.getElementById('customerInput').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('address').value = '';
+    document.getElementById('service').selectedIndex = 0;
+    selectedCustomerId = null;
+    
     // osveži seznam naročil
     loadOrders();
   } catch (err) { console.error(err); alert('Napaka pri oddaji naročila. Preverite konzolo.'); }
