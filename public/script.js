@@ -243,15 +243,17 @@ async function addItemToOrder(orderId, orderEl) {
   }
 }
 
-async function loadOrders() {
+async function loadOrders(preserveScrollPosition = true) {
   const list = document.getElementById('ordersList');
   // Save the ID of the topmost visible order
   let topOrderId = null;
-  const orderDivs = list.querySelectorAll('.order');
-  for (let div of orderDivs) {
-    if (div.getBoundingClientRect().top >= 0) {
-      topOrderId = div.id.replace('order-', '');
-      break;
+  if (preserveScrollPosition) {
+    const orderDivs = list.querySelectorAll('.order');
+    for (let div of orderDivs) {
+      if (div.getBoundingClientRect().top >= 0) {
+        topOrderId = div.id.replace('order-', '');
+        break;
+      }
     }
   }
   list.textContent = 'Nalaganje...';
@@ -504,8 +506,8 @@ async function order() {
     document.getElementById('service').selectedIndex = 0;
     selectedCustomerId = null;
     
-    // osveži seznam naročil
-    loadOrders();
+    // osveži seznam naročil in scrollaj na vrh
+    loadOrders(false);
   } catch (err) { console.error(err); alert('Napaka pri oddaji naročila. Preverite konzolo.'); }
 }
 
