@@ -103,7 +103,6 @@ function createArticleSelect(selectedId) {
   const container = document.createElement('div');
   container.className = 'article-select-container';
   container.style.position = 'relative';
-  container.style.maxWidth = '200px';
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'article-input';
@@ -188,9 +187,10 @@ function renderOrderItems(container, items) {
     const row = document.createElement('div');
     row.className = 'order-item';
     const qty = it.quantity || 1;
+    const qtyDisplay = Number(qty) % 1 === 0 ? qty : Number(qty).toFixed(1);
     const name = it.name || '(artikel)';
     const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
-    row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qty} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
+    row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qtyDisplay} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
     ul.appendChild(row);
   });
   container.appendChild(ul);
@@ -200,7 +200,7 @@ async function addItemToOrder(orderId, orderEl) {
   const container = orderEl.querySelector('.article-select-container');
   const qtyIn = orderEl.querySelector('.article-qty');
   const articleId = container ? container.dataset.selectedId : '';
-  const qty = Math.max(1, parseInt(qtyIn ? qtyIn.value : 1) || 1);
+  const qty = Math.max(0.1, parseFloat(qtyIn ? qtyIn.value : 1) || 1);
   if (!articleId) { alert('Izberite artikel.'); return; }
 
   const art = articlesCache.find(a => String(a._id) === String(articleId));
@@ -305,6 +305,7 @@ async function loadOrders() {
       addWrap.className = 'add-item-wrap';
       const articleSel = createArticleSelect();
       articleSel.style.marginTop = '8px';
+      articleSel.style.marginRight = '12px';
       const qtyIn = document.createElement('input');
       qtyIn.type = 'number'; qtyIn.min = '0.1'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
       qtyIn.style.width = '80px'; qtyIn.style.marginLeft = '8px';
