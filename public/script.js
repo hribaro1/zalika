@@ -176,7 +176,7 @@ function createArticleSelect(selectedId) {
   return container;
 }
 
-function renderOrderItems(container, items) {
+function renderOrderItems(container, items, orderId) {
   container.innerHTML = '';
   if (!items || !items.length) {
     container.innerHTML = '<i>Ni pozicij.</i>';
@@ -184,14 +184,17 @@ function renderOrderItems(container, items) {
   }
   const ul = document.createElement('div');
   ul.className = 'order-items';
-  items.forEach(it => {
+  items.forEach((it, index) => {
     const row = document.createElement('div');
     row.className = 'order-item';
+    row.style.cursor = 'pointer';
+    row.title = 'Kliknite za urejanje pozicije';
     const qty = it.quantity || 1;
     const qtyDisplay = Number(qty) % 1 === 0 ? qty : Number(qty).toFixed(1);
     const name = it.name || '(artikel)';
     const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
     row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qtyDisplay} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
+    row.addEventListener('click', () => openEditItemModal(orderId, index, it));
     ul.appendChild(row);
   });
   container.appendChild(ul);
@@ -275,7 +278,7 @@ async function loadOrders() {
       div.dataset.items = JSON.stringify(currentItems);
 
       // Render existing items
-      renderOrderItems(itemsContainer, currentItems);
+      renderOrderItems(itemsContainer, currentItems, o._id);
 
       // Calculate and display total
       const total = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
@@ -328,7 +331,7 @@ async function loadOrders() {
       statusSelect.addEventListener('change', () => updateStatus(o._id, statusSelect.value));
 
       const editBtn = document.createElement('button');
-      editBtn.textContent = 'Uredi'; editBtn.className = 'small-btn';
+      editBtn.textContent = 'Uredi naročilo'; editBtn.className = 'small-btn';
       editBtn.addEventListener('click', () => openEditModal(o));
 
       const printBtn = document.createElement('button');
@@ -565,4 +568,129 @@ function setupCustomerAutocomplete() {
       showCustomerSuggestions(customersCache);
     }
   });
+}
+
+/* --- Edit item modal functions --- */
+function openEditItemModal(orderId, itemIndex, item) {
+  const modal = document.getElementById('editItemModal');
+  if (!modal) { alert('Modal za urejanje pozicije ni na voljo.'); return; }
+  
+  modal.setAttribute('aria-hidden', 'false');
+  modal.style.display = 'flex';
+  
+  // Set current values
+  document.getElementById('edit-item-quantity').value = item.quantity || 1;
+  
+  // Setup article select
+  const articleContainer = document.getElementById('edit-item-article-container');
+  articleContainer.innerHTML = '';
+  const articleSel = createArticleSelect(item.articleId);
+  articleContainer.appendChild(articleSel);
+  
+  // Store orderId and itemIndex for saving
+  modal.dataset.editingOrderId = orderId;
+  modal.dataset.editingItemIndex = itemIndex;
+  
+  document.getElementById('edit-item-quantity').focus();
+}
+
+function closeEditItemModal() {
+  const modal = document.getElementById('editItemModal');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.style.display = 'none';
+  delete modal.dataset.editingOrderId;
+  delete modal.dataset.editingItemIndex;
+}
+
+async function saveEditItem() {
+  const modal = document.getElementById('editItemModal');
+  const orderId = modal.dataset.editingOrderId;
+  const itemIndex = parseInt(modal.dataset.editingItemIndex);
+  
+  if (!orderId || isNaN(itemIndex)) return;
+  
+  const qtyInput = document.getElementById('edit-item-quantity');
+  const quantity = Math.max(0.1, parseFloat(qtyInput.value) || 1);
+  
+  const articleContainer = document.getElementById('edit-item-article-container').querySelector('.article-select-container');
+  const articleId = articleContainer ? articleContainer.dataset.selectedId : '';
+  
+  if (!articleId) { alert('Izberite artikel.'); return; }
+  
+  const art = articlesCache.find(a => String(a._id) === String(articleId));
+  if (!art) { alert('Artikel ni na voljo.'); return; }
+  
+  // Get current order element and items
+  const orderEl = document.getElementById('order-' + orderId);
+  if (!orderEl) { alert('Naročilo ni najdeno.'); return; }
+  
+  let items = [];
+  try { items = JSON.parse(orderEl.dataset.items || '[]'); } catch(e) { items = []; }
+  
+  // Update the item
+  items[itemIndex] = {
+    articleId: art._id,
+    name: art.name,
+    unit: art.unit,
+    price: art.price,
+    vatPercent: art.vatPercent,
+    finalPrice: art.finalPrice,
+    quantity: quantity,
+    lineTotal: Math.round(art.finalPrice * quantity * 100) / 100
+  };
+  
+  // Send update to server
+  try {
+    const res = await fetch(`/order/${orderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => null);
+      throw new Error(e && e.error ? e.error : 'Server error');
+    }
+    closeEditItemModal();
+    loadOrders();
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri posodabljanju pozicije. Preverite konzolo.');
+  }
+}
+
+async function deleteEditItem() {
+  const modal = document.getElementById('editItemModal');
+  const orderId = modal.dataset.editingOrderId;
+  const itemIndex = parseInt(modal.dataset.editingItemIndex);
+  
+  if (!orderId || isNaN(itemIndex)) return;
+  if (!confirm('Ali ste prepričani, da želite izbrisati to pozicijo?')) return;
+  
+  // Get current order element and items
+  const orderEl = document.getElementById('order-' + orderId);
+  if (!orderEl) { alert('Naročilo ni najdeno.'); return; }
+  
+  let items = [];
+  try { items = JSON.parse(orderEl.dataset.items || '[]'); } catch(e) { items = []; }
+  
+  // Remove the item
+  items.splice(itemIndex, 1);
+  
+  // Send update to server
+  try {
+    const res = await fetch(`/order/${orderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => null);
+      throw new Error(e && e.error ? e.error : 'Server error');
+    }
+    closeEditItemModal();
+    loadOrders();
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri brisanju pozicije. Preverite konzolo.');
+  }
 }
