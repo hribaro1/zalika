@@ -347,10 +347,14 @@ async function loadOrders() {
       if (window.location.pathname !== '/archive') div.appendChild(addWrap);
 
       const controls = document.createElement('div');
-      controls.appendChild(statusSelect);
       controls.appendChild(editBtn);
       controls.appendChild(printBtn);
       div.appendChild(controls);
+      
+      const statusControl = document.createElement('div');
+      statusControl.style.marginTop = '8px';
+      statusControl.appendChild(statusSelect);
+      div.appendChild(statusControl);
 
       if (historyDiv) div.appendChild(historyDiv);
 
