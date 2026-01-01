@@ -454,6 +454,29 @@ async function saveEdit() {
   }
 }
 
+async function deleteOrder() {
+  const modal = document.getElementById('editModal');
+  const id = modal.dataset.editingId;
+  if (!id) return;
+  
+  if (!confirm('Ali ste prepričani, da želite izbrisati to naročilo?')) return;
+  
+  try {
+    const res = await fetch(`/order/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err && err.error ? err.error : 'Server error');
+    }
+    closeEditModal();
+    loadOrders();
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri brisanju naročila. Preverite konzolo.');
+  }
+}
+
 /* place order and bindings */
 async function order() {
   if (!selectedCustomerId) return alert('Izberite stranko iz predlog.');

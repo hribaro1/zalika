@@ -339,19 +339,40 @@ app.patch("/order/:id/status", async (req, res) => {
     if (!STATUS_OPTIONS.includes(status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
+
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
+
+    // Initialize history if missing
     if (!order.statusHistory || order.statusHistory.length === 0) {
       order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
     }
-    order.status = status;
-    order.statusHistory.push({ status, timestamp: new Date() });
+
+    // Add to history if status changed
+    if (status !== order.status) {
+      order.statusHistory.push({ status, timestamp: new Date() });
+      order.status = status;
+    }
+
     await order.save();
     io.emit('orderUpdated', order);
     res.json({ message: "Status updated", order });
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message || "Failed to update status" });
+  }
+});
+
+// Delete order
+app.delete("/order/:id", async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    io.emit('orderDeleted', { id: req.params.id });
+    res.json({ message: "Order deleted", order });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete order" });
   }
 });
 
