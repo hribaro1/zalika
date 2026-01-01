@@ -587,11 +587,18 @@ function openEditItemModal(orderId, itemIndex, item) {
   const articleSel = createArticleSelect(item.articleId);
   articleContainer.appendChild(articleSel);
   
+  // Trigger the dropdown to show when the input is ready
+  setTimeout(() => {
+    const input = articleSel.querySelector('.article-input');
+    if (input) {
+      input.focus();
+      input.click();
+    }
+  }, 100);
+  
   // Store orderId and itemIndex for saving
   modal.dataset.editingOrderId = orderId;
   modal.dataset.editingItemIndex = itemIndex;
-  
-  document.getElementById('edit-item-quantity').focus();
 }
 
 function closeEditItemModal() {
