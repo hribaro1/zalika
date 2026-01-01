@@ -371,6 +371,9 @@ async function loadOrders(preserveScrollPosition = true) {
       if (targetDiv) {
         targetDiv.scrollIntoView({ behavior: 'instant', block: 'start' });
       }
+    } else {
+      // Scroll to top when preserveScrollPosition is false (e.g., after adding new order)
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   } catch (err) {
     console.error(err);
