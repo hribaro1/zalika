@@ -103,7 +103,7 @@ function createArticleSelect(selectedId) {
   const container = document.createElement('div');
   container.className = 'article-select-container';
   container.style.position = 'relative';
-  container.style.width = '500px';
+  container.style.width = '400px';
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'article-input';
@@ -309,7 +309,7 @@ async function loadOrders() {
       articleSel.style.marginRight = '12px';
       const qtyIn = document.createElement('input');
       qtyIn.type = 'number'; qtyIn.min = '0.1'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
-      qtyIn.style.width = '100px'; qtyIn.style.marginLeft = '8px';
+      qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
       const addBtn = document.createElement('button');
       addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
       addBtn.style.marginLeft = '8px';
