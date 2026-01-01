@@ -100,6 +100,8 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   box-shadow: 0 6px 18px rgba(11,116,255,0.12);
 }
 .modal-actions .small-btn.secondary { background: transparent; color: #12324a; border: 1px solid #dfe7ef; }
+.modal-actions .small-btn.danger { background: #ff4444; color: #fff; border: none; box-shadow: 0 6px 18px rgba(255, 68, 68, 0.12); }
+.modal-actions .small-btn.danger:hover { background: #dd0000; }
 
 /* error state */
 .input-error { border-color: #ff6b6b !important; box-shadow: 0 4px 12px rgba(255,107,107,0.08); }
