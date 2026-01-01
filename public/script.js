@@ -243,7 +243,7 @@ async function addItemToOrder(orderId, orderEl) {
   }
 }
 
-async function loadOrders(preserveScrollPosition = true) {
+async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null) {
   const list = document.getElementById('ordersList');
   // Save the ID of the topmost visible order
   let topOrderId = null;
@@ -365,15 +365,21 @@ async function loadOrders(preserveScrollPosition = true) {
 
       list.appendChild(div);
     });
-    // Scroll to the previously topmost visible order
-    if (topOrderId) {
+    // Scroll to the target order
+    if (scrollToOrderId) {
+      // Scroll to the newly created order
+      setTimeout(() => {
+        const targetDiv = document.getElementById('order-' + scrollToOrderId);
+        if (targetDiv) {
+          targetDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } else if (topOrderId) {
+      // Scroll to the previously topmost visible order
       const targetDiv = document.getElementById('order-' + topOrderId);
       if (targetDiv) {
         targetDiv.scrollIntoView({ behavior: 'instant', block: 'start' });
       }
-    } else {
-      // Scroll to top when preserveScrollPosition is false (e.g., after adding new order)
-      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   } catch (err) {
     console.error(err);
@@ -501,6 +507,10 @@ async function order() {
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     
+    // Get the new order from response
+    const data = await res.json();
+    const newOrderId = data.order ? data.order._id : null;
+    
     // Clear all input fields after successful order
     document.getElementById('customerInput').value = '';
     document.getElementById('email').value = '';
@@ -509,8 +519,8 @@ async function order() {
     document.getElementById('service').selectedIndex = 0;
     selectedCustomerId = null;
     
-    // osveži seznam naročil in scrollaj na vrh
-    loadOrders(false);
+    // osveži seznam naročil in scrollaj na novo naročilo
+    loadOrders(false, newOrderId);
   } catch (err) { console.error(err); alert('Napaka pri oddaji naročila. Preverite konzolo.'); }
 }
 
