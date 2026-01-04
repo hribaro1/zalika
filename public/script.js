@@ -55,6 +55,14 @@ function pickupLabel(mode) {
   if (m === 'delivery') return 'Dostava';
   return 'Osebni prevzem';
 }
+function paymentLabel(method) {
+  const m = (method || 'cash').toLowerCase();
+  return m === 'invoice' ? 'Na račun' : 'Gotovina';
+}
+function customerTypeLabel(t) {
+  const c = (t || 'physical').toLowerCase();
+  return c === 'company' ? 'Podjetje' : 'Fizična oseba';
+}
 function formatDateISO(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -380,26 +388,6 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       // Update status immediately when dropdown changes
       statusSelect.addEventListener('change', () => updateStatus(o._id, statusSelect.value));
 
-      const paymentSelect = document.createElement('select');
-      PAYMENT_OPTIONS.forEach(opt => {
-        const oEl = document.createElement('option');
-        oEl.value = opt.value;
-        oEl.textContent = opt.label;
-        if ((o.paymentMethod || 'cash') === opt.value) oEl.selected = true;
-        paymentSelect.appendChild(oEl);
-      });
-      paymentSelect.addEventListener('change', () => updateOrderMeta(o._id, { paymentMethod: paymentSelect.value }));
-
-      const customerTypeSelect = document.createElement('select');
-      CUSTOMER_TYPE_OPTIONS.forEach(opt => {
-        const oEl = document.createElement('option');
-        oEl.value = opt.value;
-        oEl.textContent = opt.label;
-        if ((o.customerType || 'physical') === opt.value) oEl.selected = true;
-        customerTypeSelect.appendChild(oEl);
-      });
-      customerTypeSelect.addEventListener('change', () => updateOrderMeta(o._id, { customerType: customerTypeSelect.value }));
-
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Uredi naročilo'; editBtn.className = 'small-btn';
       editBtn.addEventListener('click', () => openEditModal(o));
@@ -410,9 +398,11 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
 
       div.innerHTML = `
         <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
-        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)} • ${pickupLabel(o.pickupMode)}<br/>
+        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
         <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
+        <div class="meta">Način plačila: ${paymentLabel(o.paymentMethod)}</div>
+        <div class="meta">Tip stranke: ${customerTypeLabel(o.customerType)}</div>
       `;
 
       // append items container and add form
@@ -430,8 +420,6 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       statusControl.style.gap = '8px';
       statusControl.style.alignItems = 'center';
       statusControl.style.justifyContent = 'flex-start';
-      statusControl.appendChild(paymentSelect);
-      statusControl.appendChild(customerTypeSelect);
       statusControl.appendChild(statusSelect);
       div.appendChild(statusControl);
 
@@ -584,9 +572,43 @@ async function deleteOrder() {
 
 /* place order and bindings */
 async function order() {
-  if (!selectedCustomerId) return alert('Izberite stranko iz predlog.');
-  const customer = customersCache.find(c => c._id === selectedCustomerId);
-  if (!customer) return alert('Izbrana stranka ni na voljo. Osvežite stran.');
+  let customer = selectedCustomerId ? customersCache.find(c => c._id === selectedCustomerId) : null;
+
+  // If no existing customer is selected, create a new one from entered data
+  if (!customer) {
+    const nameInput = document.getElementById('customerInput').value.trim();
+    const emailInput = (document.getElementById('email').value || '').trim();
+    const phoneInput = (document.getElementById('phone').value || '').trim();
+    const addressInput = (document.getElementById('address').value || '').trim();
+    if (!nameInput) { alert('Vnesite ime stranke ali izberite iz predlog.'); return; }
+    try {
+      const resCust = await fetch('/api/customers', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: nameInput,
+          email: emailInput,
+          phone: phoneInput,
+          address: addressInput,
+          paymentMethod: selectedCustomerPaymentMethod || 'cash',
+          type: selectedCustomerType || 'physical'
+        })
+      });
+      if (!resCust.ok) { const err = await resCust.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Napaka pri shranjevanju stranke'); }
+      const created = await resCust.json();
+      customer = created.customer;
+      if (customer && customer._id) {
+        customersCache.push(customer);
+        customersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        selectedCustomerId = customer._id;
+        selectedCustomerPaymentMethod = customer.paymentMethod || selectedCustomerPaymentMethod;
+        selectedCustomerType = customer.type || selectedCustomerType;
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Napaka pri ustvarjanju nove stranke: ' + (err && err.message ? err.message : 'Neznana napaka'));
+      return;
+    }
+  }
 
   const name = customer.name;
   const email = customer.email || '';
