@@ -1,7 +1,15 @@
 const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
+const PAYMENT_OPTIONS = [
+  { value: 'cash', label: 'Gotovina' },
+  { value: 'invoice', label: 'Na račun' }
+];
+const CUSTOMER_TYPE_OPTIONS = [
+  { value: 'physical', label: 'Fizična oseba' },
+  { value: 'company', label: 'Podjetje' }
+];
 
-// When a status change originates locally, remember which order to keep in view after socket refresh
-let pendingStatusScrollId = null;
+// When an order update originates locally, remember which order to keep in view after socket refresh
+let pendingOrderScrollId = null;
 
 const { jsPDF } = window.jspdf;
 
@@ -15,9 +23,9 @@ socket.on('orderCreated', (order) => {
 });
 socket.on('orderUpdated', (order) => {
   console.log('orderUpdated', order);
-  const isPending = pendingStatusScrollId === order._id;
-  const scrollId = isPending ? pendingStatusScrollId : null;
-  if (isPending) pendingStatusScrollId = null;
+  const isPending = pendingOrderScrollId === order._id;
+  const scrollId = isPending ? pendingOrderScrollId : null;
+  if (isPending) pendingOrderScrollId = null;
   loadOrders(true, scrollId);
 });
 socket.on('orderDeleted', (data) => {
@@ -343,6 +351,26 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       // Update status immediately when dropdown changes
       statusSelect.addEventListener('change', () => updateStatus(o._id, statusSelect.value));
 
+      const paymentSelect = document.createElement('select');
+      PAYMENT_OPTIONS.forEach(opt => {
+        const oEl = document.createElement('option');
+        oEl.value = opt.value;
+        oEl.textContent = opt.label;
+        if ((o.paymentMethod || 'cash') === opt.value) oEl.selected = true;
+        paymentSelect.appendChild(oEl);
+      });
+      paymentSelect.addEventListener('change', () => updateOrderMeta(o._id, { paymentMethod: paymentSelect.value }));
+
+      const customerTypeSelect = document.createElement('select');
+      CUSTOMER_TYPE_OPTIONS.forEach(opt => {
+        const oEl = document.createElement('option');
+        oEl.value = opt.value;
+        oEl.textContent = opt.label;
+        if ((o.customerType || 'physical') === opt.value) oEl.selected = true;
+        customerTypeSelect.appendChild(oEl);
+      });
+      customerTypeSelect.addEventListener('change', () => updateOrderMeta(o._id, { customerType: customerTypeSelect.value }));
+
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Uredi naročilo'; editBtn.className = 'small-btn';
       editBtn.addEventListener('click', () => openEditModal(o));
@@ -370,6 +398,10 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       const statusControl = document.createElement('div');
       statusControl.style.marginTop = '8px';
       statusControl.appendChild(statusSelect);
+      paymentSelect.style.marginLeft = '8px';
+      customerTypeSelect.style.marginLeft = '8px';
+      statusControl.appendChild(paymentSelect);
+      statusControl.appendChild(customerTypeSelect);
       div.appendChild(statusControl);
 
       if (historyDiv) div.appendChild(historyDiv);
@@ -406,7 +438,7 @@ async function updateStatus(id, status) {
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     const data = await res.json();
     // Ensure the next socket refresh keeps the updated order anchored in view
-    pendingStatusScrollId = id;
+    pendingOrderScrollId = id;
     // Update UI only if elements still exist (avoid race with socket-driven reload)
     const statusEl = document.getElementById(`status-${id}`);
     if (statusEl) {
@@ -420,6 +452,21 @@ async function updateStatus(id, status) {
   } catch (err) {
     console.error(err);
     alert('Napaka pri posodabljanju statusa: ' + (err && err.message ? err.message : 'Neznana napaka') + '. Preverite konzolo za več.');
+  }
+}
+
+async function updateOrderMeta(id, fields) {
+  try {
+    const res = await fetch(`/order/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields)
+    });
+    if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
+    pendingOrderScrollId = id;
+    // Soft refresh for immediate feedback; socket broadcast will also reload
+    loadOrders(true, id);
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri posodabljanju podatkov naročila: ' + (err && err.message ? err.message : 'Neznana napaka'));
   }
 }
 
@@ -441,6 +488,10 @@ function openEditModal(order) {
     if (order.status === s) opt.selected = true;
     stat.appendChild(opt);
   });
+  const paySel = document.getElementById('edit-payment');
+  if (paySel) paySel.value = order.paymentMethod || 'cash';
+  const typeSel = document.getElementById('edit-customer-type');
+  if (typeSel) typeSel.value = order.customerType || 'physical';
   modal.dataset.editingId = order._id;
   document.getElementById('edit-name').focus();
 }
@@ -461,13 +512,15 @@ async function saveEdit() {
   const address = document.getElementById('edit-address').value.trim();
   const service = document.getElementById('edit-service').value;
   const status = document.getElementById('edit-status').value;
+  const paymentMethod = document.getElementById('edit-payment') ? document.getElementById('edit-payment').value : 'cash';
+  const customerType = document.getElementById('edit-customer-type') ? document.getElementById('edit-customer-type').value : 'physical';
 
   if (!name) { alert('Ime mora biti izpolnjeno.'); return; }
 
   try {
     const res = await fetch(`/order/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address, service, status })
+      body: JSON.stringify({ name, email, phone, address, service, status, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     closeEditModal();
@@ -512,11 +565,13 @@ async function order() {
   const phone = customer.phone || '';
   const address = customer.address || '';
   const service = document.getElementById('service').value;
+  const paymentMethod = customer.paymentMethod || selectedCustomerPaymentMethod || 'cash';
+  const customerType = customer.type || selectedCustomerType || 'physical';
 
   try {
     const res = await fetch('/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address, service })
+      body: JSON.stringify({ name, email, phone, address, service, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     
@@ -556,6 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let customersCache = [];
 let selectedCustomerId = null; // id trenutno izbrane stranke
+let selectedCustomerPaymentMethod = 'cash';
+let selectedCustomerType = 'physical';
 
 async function loadCustomers() {
   try {
@@ -597,6 +654,9 @@ function chooseCustomer(c) {
   document.getElementById('email').value = c.email || '';
   document.getElementById('phone').value = c.phone || '';
   document.getElementById('address').value = c.address || '';
+  // store defaults for new order submission
+  selectedCustomerPaymentMethod = c.paymentMethod || 'cash';
+  selectedCustomerType = c.type || 'physical';
   // hide suggestions
   const box = document.getElementById('customerSuggestions');
   if (box) { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }

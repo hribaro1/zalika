@@ -69,6 +69,18 @@
         <label>Status
           <select id="edit-status"></select>
         </label>
+        <label>Način plačila
+          <select id="edit-payment">
+            <option value="cash">Gotovina</option>
+            <option value="invoice">Na račun</option>
+          </select>
+        </label>
+        <label>Tip stranke
+          <select id="edit-customer-type">
+            <option value="physical">Fizična oseba</option>
+            <option value="company">Podjetje</option>
+          </select>
+        </label>
       </div>
       <div class="modal-actions">
         <button onclick="deleteOrder()" class="small-btn danger">Izbriši naročilo</button>

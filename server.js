@@ -58,6 +58,8 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' },
+  customerType: { type: String, enum: ['physical', 'company'], default: 'physical' },
   status: { type: String, enum: STATUS_OPTIONS, default: "Naročeno" },
   statusHistory: [{
     status: { type: String, enum: STATUS_OPTIONS },
@@ -322,7 +324,7 @@ app.put("/order/:id", async (req, res) => {
     }
 
     // set provided top-level fields
-    const allowed = ['name','service','address','email','phone','status','items'];
+    const allowed = ['name','service','address','email','phone','status','items','paymentMethod','customerType'];
     allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
 
     // If status changed, add to history
