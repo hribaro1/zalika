@@ -1,5 +1,8 @@
 const STATUS_OPTIONS = ["Naročeno", "Sprejeto", "V delu", "Končano", "Oddano"];
 
+// When a status change originates locally, remember which order to keep in view after socket refresh
+let pendingStatusScrollId = null;
+
 const { jsPDF } = window.jspdf;
 
 /* --- socket.io client --- */
@@ -12,7 +15,10 @@ socket.on('orderCreated', (order) => {
 });
 socket.on('orderUpdated', (order) => {
   console.log('orderUpdated', order);
-  loadOrders();
+  const isPending = pendingStatusScrollId === order._id;
+  const scrollId = isPending ? pendingStatusScrollId : null;
+  if (isPending) pendingStatusScrollId = null;
+  loadOrders(true, scrollId);
 });
 socket.on('orderDeleted', (data) => {
   console.log('orderDeleted', data);
@@ -399,6 +405,8 @@ async function updateStatus(id, status) {
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     const data = await res.json();
+    // Ensure the next socket refresh keeps the updated order anchored in view
+    pendingStatusScrollId = id;
     // Update UI only if elements still exist (avoid race with socket-driven reload)
     const statusEl = document.getElementById(`status-${id}`);
     if (statusEl) {
