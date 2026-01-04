@@ -182,6 +182,7 @@ function createArticleSelect(selectedId) {
         item.style.cursor = 'pointer';
         item.addEventListener('mousedown', (e) => {
           e.preventDefault();
+          e.stopPropagation();
           input.value = a.name;
           container.dataset.selectedId = a._id;
           suggestions.style.display = 'none';
@@ -208,6 +209,7 @@ function createArticleSelect(selectedId) {
       item.style.cursor = 'pointer';
       item.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         input.value = a.name;
         container.dataset.selectedId = a._id;
         suggestions.style.display = 'none';
