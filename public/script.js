@@ -293,12 +293,15 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       div.className = 'order ' + statusToClass(o.status);
       div.id = 'order-' + o._id;
       const created = o.createdAt ? formatDateISO(o.createdAt) : '';
+      const currentItems = o.items || [];
+      const totalAmount = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
 
       if (isCompactOrdersView && !expandedOrdersInCompactView.has(o._id)) {
         div.classList.add('order-compact');
         div.innerHTML = `
           <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
-          <span>${escapeHtml(o.name || '')}</span>
+          <span>${escapeHtml(o.name || '')}</span><br/>
+          ${totalAmount > 0 ? `<span><strong>${totalAmount.toFixed(2)} €</strong></span>` : ''}
         `;
         div.style.cursor = 'pointer';
         div.addEventListener('click', () => {
@@ -312,7 +315,6 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       // Prepare items container and dataset
       const itemsContainer = document.createElement('div');
       itemsContainer.className = 'items-container';
-      const currentItems = o.items || [];
       div.dataset.items = JSON.stringify(currentItems);
 
       // Render existing items
