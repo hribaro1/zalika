@@ -107,6 +107,7 @@ function generateOrderPDF(order) {
 /* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
 let articlesCache = [];
 let isCompactOrdersView = false;
+let expandedOrdersInCompactView = new Set();
 
 async function loadArticlesCache() {
   try {
@@ -293,12 +294,17 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       div.id = 'order-' + o._id;
       const created = o.createdAt ? formatDateISO(o.createdAt) : '';
 
-      if (isCompactOrdersView) {
+      if (isCompactOrdersView && !expandedOrdersInCompactView.has(o._id)) {
         div.classList.add('order-compact');
         div.innerHTML = `
           <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
           <span>${escapeHtml(o.name || '')}</span>
         `;
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', () => {
+          expandedOrdersInCompactView.add(o._id);
+          loadOrders(true, o._id);
+        });
         list.appendChild(div);
         return;
       }
@@ -615,8 +621,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const compactBtn = document.getElementById('ordersCompact');
   const expandBtn = document.getElementById('ordersExpanded');
-  if (compactBtn) compactBtn.addEventListener('click', () => { isCompactOrdersView = true; loadOrders(false); });
-  if (expandBtn) expandBtn.addEventListener('click', () => { isCompactOrdersView = false; loadOrders(false); });
+  if (compactBtn) compactBtn.addEventListener('click', () => { isCompactOrdersView = true; expandedOrdersInCompactView.clear(); loadOrders(false); });
+  if (expandBtn) expandBtn.addEventListener('click', () => { isCompactOrdersView = false; expandedOrdersInCompactView.clear(); loadOrders(false); });
 
   // customers autocomplete + articles cache then load orders
   loadCustomers().then(() => {
