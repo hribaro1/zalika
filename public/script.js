@@ -153,6 +153,12 @@ function createArticleSelect(selectedId) {
   container.className = 'article-select-container';
   container.style.position = 'relative';
   container.style.width = '300px';
+  
+  // Prevent clicks inside this container from propagating to parent order div
+  container.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'article-input';
