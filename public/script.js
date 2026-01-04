@@ -163,6 +163,12 @@ function createArticleSelect(selectedId) {
   input.type = 'text';
   input.className = 'article-input';
   input.placeholder = 'Išči artikel...';
+  
+  // Stop click propagation on input
+  input.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
   const suggestions = document.createElement('div');
   suggestions.className = 'article-suggestions';
   suggestions.style.display = 'none';
@@ -173,9 +179,16 @@ function createArticleSelect(selectedId) {
   suggestions.style.overflowY = 'auto';
   suggestions.style.zIndex = '1000';
   suggestions.style.width = '100%';
+  
+  // Stop click propagation on suggestions
+  suggestions.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
   container.appendChild(input);
   container.appendChild(suggestions);
-  input.addEventListener('focus', () => {
+  input.addEventListener('focus', (e) => {
+    e.stopPropagation();
     const q = input.value.trim().toLowerCase();
     if (!q) {
       const filtered = articlesCache;
@@ -201,7 +214,8 @@ function createArticleSelect(selectedId) {
       suggestions.style.display = filtered.length ? 'block' : 'none';
     }
   });
-  input.addEventListener('input', () => {
+  input.addEventListener('input', (e) => {
+    e.stopPropagation();
     const q = input.value.trim().toLowerCase();
     if (!q) {
       suggestions.style.display = 'none';
