@@ -332,6 +332,21 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 
 .order-total { margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; text-align: right; }
 
+.date-group-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 12px 16px; 
+  margin: 16px 0 8px 0; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+  color: white; 
+  border-radius: 8px; 
+  font-size: 16px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.date-group-header strong { font-size: 18px; }
+.date-group-header .date-total { font-size: 20px; font-weight: bold; }
+
 .status-history { margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 12px; }
 .status-history ul { margin: 5px 0 0 20px; padding: 0; }
 .status-history li { margin: 2px 0; }

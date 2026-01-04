@@ -69,6 +69,17 @@ function formatDateISO(iso) {
   const pad = n => String(n).padStart(2, '0');
   return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+function formatDateOnly(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
+}
+function getDateKey(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toISOString().split('T')[0]; // YYYY-MM-DD
+}
 function escapeHtml(str) {
   if (!str && str !== 0) return '';
   return String(str)
@@ -307,8 +318,67 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     const orders = await res.json();
     if (!orders.length) { list.innerHTML = '<i>Ni še nobenih naročil.</i>'; return; }
     list.innerHTML = '';
-    orders.forEach(o => {
-      const div = document.createElement('div');
+
+    const isGroupedView = window.location.pathname === '/completed' || window.location.pathname === '/archive';
+
+    if (isGroupedView) {
+      // Group orders by date
+      const ordersByDate = {};
+      orders.forEach(o => {
+        const dateKey = getDateKey(o.createdAt);
+        if (!ordersByDate[dateKey]) {
+          ordersByDate[dateKey] = [];
+        }
+        ordersByDate[dateKey].push(o);
+      });
+
+      // Render each date group
+      Object.keys(ordersByDate).sort().reverse().forEach(dateKey => {
+        const dateOrders = ordersByDate[dateKey];
+        const dateTotal = dateOrders.reduce((sum, o) => {
+          const items = o.items || [];
+          return sum + items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+        }, 0);
+        
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'date-group-header';
+        dateHeader.innerHTML = `
+          <strong>${formatDateOnly(dateOrders[0].createdAt)}</strong>
+          <span class="date-total">${dateTotal > 0 ? dateTotal.toFixed(2) + ' €' : ''}</span>
+        `;
+        list.appendChild(dateHeader);
+
+        renderOrdersGroup(dateOrders, list);
+      });
+    } else {
+      renderOrdersGroup(orders, list);
+    }
+
+    // Scroll to the target order
+    if (scrollToOrderId) {
+      // Scroll to the newly created order
+      setTimeout(() => {
+        const targetDiv = document.getElementById('order-' + scrollToOrderId);
+        if (targetDiv) {
+          targetDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } else if (topOrderId) {
+      // Scroll to the previously topmost visible order
+      const targetDiv = document.getElementById('order-' + topOrderId);
+      if (targetDiv) {
+        targetDiv.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
+  }
+}
+
+function renderOrdersGroup(orders, list) {
+  orders.forEach(o => {
+    const div = document.createElement('div');
       div.className = 'order ' + statusToClass(o.status);
       div.id = 'order-' + o._id;
       const created = o.createdAt ? formatDateISO(o.createdAt) : '';
@@ -409,7 +479,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
 
       // append items container and add form
       div.appendChild(itemsContainer);
-      if (window.location.pathname !== '/archive') div.appendChild(addWrap);
+      if (window.location.pathname !== '/archive' && window.location.pathname !== '/completed') div.appendChild(addWrap);
 
       const statusControl = document.createElement('div');
       statusControl.style.marginTop = '8px';
@@ -429,26 +499,6 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
 
       list.appendChild(div);
     });
-    // Scroll to the target order
-    if (scrollToOrderId) {
-      // Scroll to the newly created order
-      setTimeout(() => {
-        const targetDiv = document.getElementById('order-' + scrollToOrderId);
-        if (targetDiv) {
-          targetDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    } else if (topOrderId) {
-      // Scroll to the previously topmost visible order
-      const targetDiv = document.getElementById('order-' + topOrderId);
-      if (targetDiv) {
-        targetDiv.scrollIntoView({ behavior: 'instant', block: 'start' });
-      }
-    }
-  } catch (err) {
-    console.error(err);
-    list.innerHTML = '<span style="color:red">Napaka pri nalaganju naročil.</span>';
-  }
 }
 
 async function updateStatus(id, status) {
