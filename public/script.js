@@ -507,9 +507,6 @@ function openEditModal(order) {
   if (!modal) { alert('Modal ni na voljo.'); return; }
   modal.setAttribute('aria-hidden', 'false'); modal.style.display = 'flex';
   document.getElementById('edit-name').value = order.name || '';
-  document.getElementById('edit-email').value = order.email || '';
-  document.getElementById('edit-phone').value = order.phone || '';
-  document.getElementById('edit-address').value = order.address || '';
   const srv = document.getElementById('edit-service');
   for (let i=0;i<srv.options.length;i++) { if (srv.options[i].value === order.service) { srv.selectedIndex = i; break; } }
   const stat = document.getElementById('edit-status');
@@ -540,9 +537,6 @@ async function saveEdit() {
   const id = modal.dataset.editingId;
   if (!id) return;
   const name = document.getElementById('edit-name').value.trim();
-  const email = document.getElementById('edit-email').value.trim();
-  const phone = document.getElementById('edit-phone').value.trim();
-  const address = document.getElementById('edit-address').value.trim();
   const service = document.getElementById('edit-service').value;
   const pickupMode = document.getElementById('edit-pickup') ? document.getElementById('edit-pickup').value : 'personal';
   const status = document.getElementById('edit-status').value;
@@ -554,7 +548,7 @@ async function saveEdit() {
   try {
     const res = await fetch(`/order/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address, service, pickupMode, status, paymentMethod, customerType })
+      body: JSON.stringify({ name, service, pickupMode, status, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     closeEditModal();
