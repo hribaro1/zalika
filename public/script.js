@@ -280,6 +280,10 @@ async function addItemToOrder(orderId, orderEl) {
   };
   items.push(newItem);
 
+  // Ensure order stays expanded when socket update arrives - MUST be set BEFORE the fetch
+  expandedOrdersInCompactView.add(orderId);
+  pendingOrderScrollId = orderId;
+
   // send update to server
   try {
     const res = await fetch(`/order/${orderId}`, {
@@ -288,10 +292,7 @@ async function addItemToOrder(orderId, orderEl) {
       body: JSON.stringify({ items })
     });
     if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    // Ensure order stays expanded when socket update arrives
-    expandedOrdersInCompactView.add(orderId);
-    pendingOrderScrollId = orderId;
-    // Don't call loadOrders() - let socket update handle it (like updateStatus does)
+    // Socket update will handle the refresh
   } catch (err) {
     console.error(err);
     alert('Napaka pri dodajanju pozicije. Preverite konzolo.');
@@ -920,6 +921,10 @@ async function saveEditItem() {
     lineTotal: Math.round(art.finalPrice * quantity * 100) / 100
   };
   
+  // Set state BEFORE sending request to prevent race condition
+  expandedOrdersInCompactView.add(orderId);
+  pendingOrderScrollId = orderId;
+
   // Send update to server
   try {
     const res = await fetch(`/order/${orderId}`, {
@@ -932,9 +937,7 @@ async function saveEditItem() {
       throw new Error(e && e.error ? e.error : 'Server error');
     }
     closeEditItemModal();
-    expandedOrdersInCompactView.add(orderId);
-    pendingOrderScrollId = orderId;
-    // Don't call loadOrders() - let socket update handle it
+    // Socket update will handle the refresh
   } catch (err) {
     console.error(err);
     alert('Napaka pri posodabljanju pozicije. Preverite konzolo.');
@@ -959,6 +962,10 @@ async function deleteEditItem() {
   // Remove the item
   items.splice(itemIndex, 1);
   
+  // Set state BEFORE sending request to prevent race condition
+  expandedOrdersInCompactView.add(orderId);
+  pendingOrderScrollId = orderId;
+
   // Send update to server
   try {
     const res = await fetch(`/order/${orderId}`, {
@@ -971,9 +978,7 @@ async function deleteEditItem() {
       throw new Error(e && e.error ? e.error : 'Server error');
     }
     closeEditItemModal();
-    expandedOrdersInCompactView.add(orderId);
-    pendingOrderScrollId = orderId;
-    // Don't call loadOrders() - let socket update handle it
+    // Socket update will handle the refresh
   } catch (err) {
     console.error(err);
     alert('Napaka pri brisanju pozicije. Preverite konzolo.');
