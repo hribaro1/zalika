@@ -322,10 +322,18 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     const isGroupedView = window.location.pathname === '/completed' || window.location.pathname === '/archive';
 
     if (isGroupedView) {
-      // Group orders by date
+      // Group orders by date when status changed to current status (Končano or Oddano)
       const ordersByDate = {};
       orders.forEach(o => {
-        const dateKey = getDateKey(o.createdAt);
+        let statusDate = o.createdAt;
+        if (o.statusHistory && o.statusHistory.length > 0) {
+          // Find the last entry with the current status
+          const statusEntry = o.statusHistory.slice().reverse().find(h => h.status === o.status);
+          if (statusEntry && statusEntry.timestamp) {
+            statusDate = statusEntry.timestamp;
+          }
+        }
+        const dateKey = getDateKey(statusDate);
         if (!ordersByDate[dateKey]) {
           ordersByDate[dateKey] = [];
         }
@@ -342,9 +350,12 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
         
         const dateHeader = document.createElement('div');
         dateHeader.className = 'date-group-header';
+        const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
+          ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
+          : dateOrders[0].createdAt;
         dateHeader.innerHTML = `
-          <strong>${formatDateOnly(dateOrders[0].createdAt)}</strong>
-          <span class="date-total">${dateTotal > 0 ? dateTotal.toFixed(2) + ' €' : ''}</span>
+          <strong>${formatDateOnly(displayDate)}</strong>
+          <span class="date-total">${dateTotal > 0 ? 'Dnevni znesek: ' + dateTotal.toFixed(2) + ' €' : ''}</span>
         `;
         list.appendChild(dateHeader);
 
