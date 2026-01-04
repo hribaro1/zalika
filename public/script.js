@@ -480,6 +480,11 @@ function renderOrdersGroup(orders, list) {
       printBtn.textContent = 'Izpis naročila'; printBtn.className = 'small-btn';
       printBtn.addEventListener('click', () => generateOrderPDF(o));
 
+      // Apply light gray background for Oddano orders in completed section
+      if (o.status === 'Oddano' && window.location.pathname === '/completed') {
+        div.style.backgroundColor = '#f5f5f5';
+      }
+
       div.innerHTML = `
         <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
         <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>

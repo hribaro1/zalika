@@ -284,7 +284,7 @@ app.get("/api/archive", async (req, res) => {
 // List completed orders
 app.get("/api/completed", async (req, res) => {
   try {
-    const orders = await Order.find({status: "Končano"}).sort({ createdAt: -1 }).lean();
+    const orders = await Order.find({status: {$in: ["Končano", "Oddano"]}}).sort({ createdAt: -1 }).lean();
     res.json(orders);
   } catch (err) {
     console.error(err);
