@@ -787,6 +787,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancel) cancel.addEventListener('click', (e) => { e.preventDefault(); closeEditModal(); });
   if (save) save.addEventListener('click', (e) => { e.preventDefault(); saveEdit(); });
 
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/login';
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    });
+  }
+
   const compactBtn = document.getElementById('ordersCompact');
   const expandBtn = document.getElementById('ordersExpanded');
   
