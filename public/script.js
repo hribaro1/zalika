@@ -538,8 +538,11 @@ function renderOrdersGroup(orders, list) {
       if (isCompactOrdersView && expandedOrdersInCompactView.has(o._id)) {
         div.style.cursor = 'pointer';
         div.addEventListener('click', (e) => {
-          // Only toggle if clicked on the card itself, not on buttons/inputs/selects
-          if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+          // Only toggle if clicked on the card itself, not on buttons/inputs/selects/article-suggestions
+          if (!e.target.closest('.article-select-container') && 
+              e.target.tagName !== 'BUTTON' && 
+              e.target.tagName !== 'SELECT' && 
+              e.target.tagName !== 'INPUT') {
             expandedOrdersInCompactView.delete(o._id);
             loadOrders(true, o._id);
           }
