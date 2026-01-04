@@ -299,7 +299,9 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     // ensure articles loaded for select options
     if (!articlesCache.length) await loadArticlesCache();
 
-    const url = window.location.pathname === '/archive' ? '/api/archive' : '/orders';
+    let url = '/orders';
+    if (window.location.pathname === '/archive') url = '/api/archive';
+    else if (window.location.pathname === '/completed') url = '/api/completed';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();

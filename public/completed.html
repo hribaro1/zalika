@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prihranite čas — mi likamo za vas!</title>
+  <title>Končana naročila</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,34 +15,11 @@
     <a href="/archive">Oddano</a>
   </nav>
 
-  <h1>Sprejem naročila</h1>
-
-  <!-- Customer autocomplete: typeahead dropdown that filters while typing -->
-  <div class="customer-autocomplete">
-    <input id="customerInput" placeholder="Ime in priimek stranke" autocomplete="off" />
-    <div id="customerSuggestions" class="suggestions" aria-hidden="true"></div>
-  </div>
-
-  <input id="email" placeholder="E-pošta" />
-  <input id="phone" placeholder="Telefonska številka" />
-  <input id="address" placeholder="Naslov" />
-  
-  <select id="service">
-    <option>Likanje</option>
-    <option>Pranje in likanje</option>
-    <option>Čistilnica</option>
-  </select>
-
-  <select id="pickupMode">
-    <option value="personal">Osebni prevzem</option>
-    <option value="delivery">Dostava</option>
-  </select>
-
-  <button id="placeOrder">Potrditev naročila</button>
+  <h1>Končana naročila</h1>
 
   <div id="orders">
     <div class="orders-header">
-      <h2>Pregled naročil</h2>
+      <h2>Končana naročila</h2>
       <div class="orders-toggle">
         <button id="ordersCompact" class="small-btn" aria-label="Skrči pogled">−</button>
         <button id="ordersExpanded" class="small-btn" aria-label="Razširi pogled">+</button>
@@ -92,32 +69,8 @@
         </label>
       </div>
       <div class="modal-actions">
-        <button onclick="deleteOrder()" class="small-btn danger">Izbriši naročilo</button>
         <button id="edit-cancel" class="small-btn secondary">Prekliči</button>
         <button id="edit-save" class="small-btn primary">Shrani</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit item modal -->
-  <div id="editItemModal" class="modal" aria-hidden="true" style="display:none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="editItemModalTitle">
-      <div class="modal-header">
-        <h3 id="editItemModalTitle">Uredi pozicijo</h3>
-        <button class="modal-close" onclick="closeEditItemModal()" aria-label="Zapri">×</button>
-      </div>
-      <div class="modal-body">
-        <label>Artikel
-          <div id="edit-item-article-container"></div>
-        </label>
-        <label>Količina
-          <input id="edit-item-quantity" type="number" min="0.1" step="0.1" value="1" />
-        </label>
-      </div>
-      <div class="modal-actions">
-        <button onclick="deleteEditItem()" class="small-btn secondary">Izbriši</button>
-        <button onclick="closeEditItemModal()" class="small-btn secondary">Prekliči</button>
-        <button onclick="saveEditItem()" class="small-btn primary">Shrani</button>
       </div>
     </div>
   </div>
@@ -127,4 +80,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-

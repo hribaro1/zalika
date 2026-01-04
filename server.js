@@ -13,6 +13,11 @@ app.get('/archive', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'archive.html'));
 });
 
+// Serve completed page
+app.get('/completed', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'completed.html'));
+});
+
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
@@ -254,10 +259,10 @@ app.post("/order", async (req, res) => {
   }
 });
 
-// List orders (most recent first, excluding archived)
+// List orders (most recent first, excluding archived and completed)
 app.get("/orders", async (req, res) => {
   try {
-    const orders = await Order.find({status: {$ne: "Oddano"}}).sort({ createdAt: -1 }).lean();
+    const orders = await Order.find({status: {$nin: ["Oddano", "Končano"]}}).sort({ createdAt: -1 }).lean();
     res.json(orders);
   } catch (err) {
     console.error(err);
@@ -273,6 +278,17 @@ app.get("/api/archive", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch archived orders" });
+  }
+});
+
+// List completed orders
+app.get("/api/completed", async (req, res) => {
+  try {
+    const orders = await Order.find({status: "Končano"}).sort({ createdAt: -1 }).lean();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch completed orders" });
   }
 });
 
