@@ -11,6 +11,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 .order-compact { padding:12px; font-size:14px; cursor:pointer; }
 .order-compact:hover { opacity:0.85; transform:scale(1.02); transition:all 0.15s ease; }
 .order-compact strong { display:block; }
+.oddano-completed { background-color: #f5f5f5; border-left: 6px solid #9e9e9e; }
 
 /* primary action */
 #placeOrder {

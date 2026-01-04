@@ -399,6 +399,12 @@ function renderOrdersGroup(orders, list) {
 
       if (isCompactOrdersView && !expandedOrdersInCompactView.has(o._id)) {
         div.classList.add('order-compact');
+        
+        // Apply light gray background for Oddano orders in completed section
+        if (o.status === 'Oddano' && window.location.pathname === '/completed') {
+          div.classList.add('oddano-completed');
+        }
+        
         div.innerHTML = `
           <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong>
           <span>${escapeHtml(o.name || '')}${o.service ? ' — ' + escapeHtml(o.service) : ''}</span><br/>
