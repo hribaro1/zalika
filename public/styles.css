@@ -337,10 +337,12 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
   justify-content: space-between; 
   align-items: center; 
   padding: 12px 16px; 
-  margin: 16px 0 8px 0; 
-  background: linear-gradient(135deg, #4fc3f7 0%, #81d4fa 100%); 
+  margin: 16px -9999px 8px -9999px;
+  padding-left: calc(16px + 9999px);
+  padding-right: calc(16px + 9999px);
+  background: linear-gradient(135deg, #0277bd 0%, #0288d1 100%); 
   color: white; 
-  border-radius: 8px; 
+  border-radius: 0;
   font-size: 16px; 
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }

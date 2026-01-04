@@ -509,6 +509,18 @@ function renderOrdersGroup(orders, list) {
 
       if (historyDiv) div.appendChild(historyDiv);
 
+      // In compact view mode, add toggle functionality to expanded orders
+      if (isCompactOrdersView && expandedOrdersInCompactView.has(o._id)) {
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', (e) => {
+          // Only toggle if clicked on the card itself, not on buttons/inputs/selects
+          if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+            expandedOrdersInCompactView.delete(o._id);
+            loadOrders(true, o._id);
+          }
+        });
+      }
+
       list.appendChild(div);
     });
 }
