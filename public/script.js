@@ -134,8 +134,7 @@ function generateOrderPDF(order) {
 
 /* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
 let articlesCache = [];
-let isCompactOrdersView = true;
-let expandedOrdersInCompactView = new Set();
+let expandedOrders = new Set();
 
 async function loadArticlesCache() {
   try {
@@ -307,7 +306,7 @@ async function addItemToOrder(orderId, orderEl) {
   items.push(newItem);
 
   // Ensure order stays expanded when socket update arrives - MUST be set BEFORE the fetch
-  expandedOrdersInCompactView.add(orderId);
+  expandedOrders.add(orderId);
   pendingOrderScrollId = orderId;
 
   // send update to server
@@ -429,7 +428,8 @@ function renderOrdersGroup(orders, list) {
       const currentItems = o.items || [];
       const totalAmount = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
 
-      if (isCompactOrdersView && !expandedOrdersInCompactView.has(o._id)) {
+      // Render compact if order is not in expandedOrders Set
+      if (!expandedOrders.has(o._id)) {
         div.classList.add('order-compact');
         
         // Apply light gray background for Oddano orders in completed section
@@ -445,7 +445,7 @@ function renderOrdersGroup(orders, list) {
         `;
         div.style.cursor = 'pointer';
         div.addEventListener('click', () => {
-          expandedOrdersInCompactView.add(o._id);
+          expandedOrders.add(o._id);
           loadOrders(true, o._id);
         });
         list.appendChild(div);
@@ -554,29 +554,27 @@ function renderOrdersGroup(orders, list) {
 
       if (historyDiv) div.appendChild(historyDiv);
 
-      // In compact view mode, add toggle functionality to expanded orders
-      if (isCompactOrdersView && expandedOrdersInCompactView.has(o._id)) {
-        div.style.cursor = 'pointer';
-        div.addEventListener('click', (e) => {
-          // Don't collapse when clicking on interactive elements
-          const clickedInteractive = 
-            e.target.tagName === 'BUTTON' ||
-            e.target.tagName === 'SELECT' ||
-            e.target.tagName === 'INPUT' ||
-            e.target.closest('.article-select-container') ||
-            e.target.closest('.article-suggestions') ||
-            e.target.closest('.add-item-wrap') ||
-            e.target.closest('.items-container') ||
-            e.target.closest('.status-select') ||
-            e.target.classList.contains('small-btn') ||
-            e.target.closest('.order-item');
-          
-          if (!clickedInteractive) {
-            expandedOrdersInCompactView.delete(o._id);
-            loadOrders(true, o._id);
-          }
-        });
-      }
+      // Add click handler to toggle individual order state
+      div.style.cursor = 'pointer';
+      div.addEventListener('click', (e) => {
+        // Don't toggle when clicking on interactive elements
+        const clickedInteractive = 
+          e.target.tagName === 'BUTTON' ||
+          e.target.tagName === 'SELECT' ||
+          e.target.tagName === 'INPUT' ||
+          e.target.closest('.article-select-container') ||
+          e.target.closest('.article-suggestions') ||
+          e.target.closest('.add-item-wrap') ||
+          e.target.closest('.items-container') ||
+          e.target.closest('.status-select') ||
+          e.target.classList.contains('small-btn') ||
+          e.target.closest('.order-item');
+        
+        if (!clickedInteractive) {
+          expandedOrders.delete(o._id);
+          loadOrders(true, o._id);
+        }
+      });
 
       list.appendChild(div);
     });
@@ -791,8 +789,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const compactBtn = document.getElementById('ordersCompact');
   const expandBtn = document.getElementById('ordersExpanded');
-  if (compactBtn) compactBtn.addEventListener('click', () => { isCompactOrdersView = true; expandedOrdersInCompactView.clear(); loadOrders(false); });
-  if (expandBtn) expandBtn.addEventListener('click', () => { isCompactOrdersView = false; expandedOrdersInCompactView.clear(); loadOrders(false); });
+  
+  if (compactBtn) compactBtn.addEventListener('click', () => { 
+    expandedOrders.clear(); 
+    loadOrders(false); 
+  });
+  if (expandBtn) expandBtn.addEventListener('click', async () => { 
+    // Get all current order IDs
+    const list = document.getElementById('ordersList');
+    if (list) {
+      const orderDivs = list.querySelectorAll('.order');
+      orderDivs.forEach(div => {
+        const orderId = div.id.replace('order-', '');
+        if (orderId) expandedOrders.add(orderId);
+      });
+    }
+    loadOrders(false); 
+  });
 
   // customers autocomplete + articles cache then load orders
   loadCustomers().then(() => {
@@ -960,7 +973,7 @@ async function saveEditItem() {
   };
   
   // Set state BEFORE sending request to prevent race condition
-  expandedOrdersInCompactView.add(orderId);
+  expandedOrders.add(orderId);
   pendingOrderScrollId = orderId;
 
   // Send update to server
@@ -1001,7 +1014,7 @@ async function deleteEditItem() {
   items.splice(itemIndex, 1);
   
   // Set state BEFORE sending request to prevent race condition
-  expandedOrdersInCompactView.add(orderId);
+  expandedOrders.add(orderId);
   pendingOrderScrollId = orderId;
 
   // Send update to server
