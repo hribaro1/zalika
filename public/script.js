@@ -503,7 +503,9 @@ function renderOrdersGroup(orders, list) {
       div.appendChild(statusControl);
 
       const controls = document.createElement('div');
-      controls.appendChild(editBtn);
+      if (window.location.pathname !== '/archive' && window.location.pathname !== '/completed') {
+        controls.appendChild(editBtn);
+      }
       controls.appendChild(printBtn);
       div.appendChild(controls);
 
@@ -829,7 +831,7 @@ function setupCustomerAutocomplete() {
 /* --- Edit item modal functions --- */
 function openEditItemModal(orderId, itemIndex, item) {
   const modal = document.getElementById('editItemModal');
-  if (!modal) { alert('Modal za urejanje pozicije ni na voljo.'); return; }
+  if (!modal) { alert('Urejanje pozicij je možno le v meniju aktivnih naročil.'); return; }
   
   modal.setAttribute('aria-hidden', 'false');
   modal.style.display = 'flex';
