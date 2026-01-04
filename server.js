@@ -1,90 +1,24 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const express = require("express");
+const mongoose = require("mongoose");
 const path = require("path");
 const http = require("http");
-const session = require("express-session");
 require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'zalika-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: false, // set to true if using HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
-// Authentication middleware
-function requireAuth(req, res, next) {
-  if (req.session && req.session.authenticated) {
-    return next();
-  }
-  res.redirect('/login');
-}
-
-// Public routes (no auth required)
-app.use('/login.html', express.static(path.join(__dirname, 'public', 'login.html')));
-app.use('/styles.css', express.static(path.join(__dirname, 'public', 'styles.css')));
-
-// Serve login page
-app.get('/login', (req, res) => {
-  if (req.session && req.session.authenticated) {
-    return res.redirect('/');
-  }
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// Login endpoint
-app.post('/api/login', (req, res) => {
-  const { password } = req.body;
-  const correctPassword = process.env.APP_PASSWORD || 'zalika123'; // Change in .env
-  
-  if (password === correctPassword) {
-    req.session.authenticated = true;
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ success: false, error: 'Napačno geslo' });
-  }
-});
-
-// Logout endpoint
-app.post('/api/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ success: true });
-});
-
-// Protected routes
-app.use(express.static(path.join(__dirname, "public"), { index: false }));
-app.get('/', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.use(express.static(path.join(__dirname, "public")));
 
 // Serve archive page
-app.get('/archive', requireAuth, (req, res) => {
+app.get('/archive', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'archive.html'));
 });
 
 // Serve completed page
-app.get('/completed', requireAuth, (req, res) => {
+app.get('/completed', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'completed.html'));
 });
-
-// Protect all API routes (except login/logout which are already defined)
-app.use('/order*', requireAuth);
-app.use('/api/*', (req, res, next) => {
-  // Skip auth for login/logout endpoints
-  if (req.path === '/api/login' || req.path === '/api/logout') {
-    return next();
-  }
-  requireAuth(req, res, next);
-});
-
-const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
@@ -326,7 +260,7 @@ app.post("/order", async (req, res) => {
 });
 
 // List orders (most recent first, excluding archived and completed)
-app.get("/orders", requireAuth, async (req, res) => {
+app.get("/orders", async (req, res) => {
   try {
     const orders = await Order.find({status: {$nin: ["Oddano", "Končano"]}}).sort({ createdAt: -1 }).lean();
     res.json(orders);
@@ -337,7 +271,7 @@ app.get("/orders", requireAuth, async (req, res) => {
 });
 
 // List archived orders
-app.get("/api/archive", requireAuth, async (req, res) => {
+app.get("/api/archive", async (req, res) => {
   try {
     const orders = await Order.find({status: "Oddano"}).sort({ createdAt: -1 }).lean();
     res.json(orders);
@@ -348,7 +282,7 @@ app.get("/api/archive", requireAuth, async (req, res) => {
 });
 
 // List completed orders
-app.get("/api/completed", requireAuth, async (req, res) => {
+app.get("/api/completed", async (req, res) => {
   try {
     const orders = await Order.find({status: {$in: ["Končano", "Oddano"]}}).sort({ createdAt: -1 }).lean();
     res.json(orders);
