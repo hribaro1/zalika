@@ -285,6 +285,7 @@ async function addItemToOrder(orderId, orderEl) {
     });
     if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
     // refresh orders (server will also broadcast)
+    expandedOrdersInCompactView.add(orderId);
     pendingOrderScrollId = orderId;
     loadOrders();
   } catch (err) {
@@ -927,6 +928,7 @@ async function saveEditItem() {
       throw new Error(e && e.error ? e.error : 'Server error');
     }
     closeEditItemModal();
+    expandedOrdersInCompactView.add(orderId);
     pendingOrderScrollId = orderId;
     loadOrders();
   } catch (err) {
@@ -965,6 +967,7 @@ async function deleteEditItem() {
       throw new Error(e && e.error ? e.error : 'Server error');
     }
     closeEditItemModal();
+    expandedOrdersInCompactView.add(orderId);
     pendingOrderScrollId = orderId;
     loadOrders();
   } catch (err) {
