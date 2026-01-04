@@ -558,11 +558,20 @@ function renderOrdersGroup(orders, list) {
       if (isCompactOrdersView && expandedOrdersInCompactView.has(o._id)) {
         div.style.cursor = 'pointer';
         div.addEventListener('click', (e) => {
-          // Only toggle if clicked on the card itself, not on buttons/inputs/selects/article-suggestions
-          if (!e.target.closest('.article-select-container') && 
-              e.target.tagName !== 'BUTTON' && 
-              e.target.tagName !== 'SELECT' && 
-              e.target.tagName !== 'INPUT') {
+          // Don't collapse when clicking on interactive elements
+          const clickedInteractive = 
+            e.target.tagName === 'BUTTON' ||
+            e.target.tagName === 'SELECT' ||
+            e.target.tagName === 'INPUT' ||
+            e.target.closest('.article-select-container') ||
+            e.target.closest('.article-suggestions') ||
+            e.target.closest('.add-item-wrap') ||
+            e.target.closest('.items-container') ||
+            e.target.closest('.status-select') ||
+            e.target.classList.contains('small-btn') ||
+            e.target.closest('.order-item');
+          
+          if (!clickedInteractive) {
             expandedOrdersInCompactView.delete(o._id);
             loadOrders(true, o._id);
           }
