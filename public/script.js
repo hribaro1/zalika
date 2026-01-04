@@ -285,6 +285,7 @@ async function addItemToOrder(orderId, orderEl) {
     });
     if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
     // refresh orders (server will also broadcast)
+    pendingOrderScrollId = orderId;
     loadOrders();
   } catch (err) {
     console.error(err);
@@ -399,7 +400,7 @@ function renderOrdersGroup(orders, list) {
       if (isCompactOrdersView && !expandedOrdersInCompactView.has(o._id)) {
         div.classList.add('order-compact');
         div.innerHTML = `
-          <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
+          <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong>
           <span>${escapeHtml(o.name || '')}${o.service ? ' — ' + escapeHtml(o.service) : ''}</span><br/>
           <span>${pickupLabel(o.pickupMode)}</span><br/>
           ${totalAmount > 0 ? `<span><strong>${totalAmount.toFixed(2)} €</strong></span>` : ''}
@@ -901,6 +902,7 @@ async function saveEditItem() {
       throw new Error(e && e.error ? e.error : 'Server error');
     }
     closeEditItemModal();
+    pendingOrderScrollId = orderId;
     loadOrders();
   } catch (err) {
     console.error(err);
@@ -938,6 +940,7 @@ async function deleteEditItem() {
       throw new Error(e && e.error ? e.error : 'Server error');
     }
     closeEditItemModal();
+    pendingOrderScrollId = orderId;
     loadOrders();
   } catch (err) {
     console.error(err);

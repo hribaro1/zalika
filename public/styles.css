@@ -10,7 +10,7 @@ input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width
 .meta { color:#666; font-size:12px; }
 .order-compact { padding:12px; font-size:14px; cursor:pointer; }
 .order-compact:hover { opacity:0.85; transform:scale(1.02); transition:all 0.15s ease; }
-.order-compact strong { display:block; margin-bottom:4px; }
+.order-compact strong { display:block; }
 
 /* primary action */
 #placeOrder {
