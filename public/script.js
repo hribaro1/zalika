@@ -7,6 +7,10 @@ const CUSTOMER_TYPE_OPTIONS = [
   { value: 'physical', label: 'Fizična oseba' },
   { value: 'company', label: 'Podjetje' }
 ];
+const PICKUP_OPTIONS = [
+  { value: 'personal', label: 'Osebni prevzem' },
+  { value: 'delivery', label: 'Dostava' }
+];
 
 // When an order update originates locally, remember which order to keep in view after socket refresh
 let pendingOrderScrollId = null;
@@ -45,6 +49,11 @@ function statusToClass(status) {
     case 'oddano': return 's-oddano';
     default: return '';
   }
+}
+function pickupLabel(mode) {
+  const m = (mode || 'personal').toLowerCase();
+  if (m === 'delivery') return 'Dostava';
+  return 'Osebni prevzem';
 }
 function formatDateISO(iso) {
   if (!iso) return '';
@@ -300,7 +309,8 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
         div.classList.add('order-compact');
         div.innerHTML = `
           <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
-          <span>${escapeHtml(o.name || '')}</span><br/>
+          <span>${escapeHtml(o.name || '')}${o.service ? ' — ' + escapeHtml(o.service) : ''}</span><br/>
+          <span>${pickupLabel(o.pickupMode)}</span><br/>
           ${totalAmount > 0 ? `<span><strong>${totalAmount.toFixed(2)} €</strong></span>` : ''}
         `;
         div.style.cursor = 'pointer';
@@ -400,7 +410,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
 
       div.innerHTML = `
         <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong><br/>
-        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)}<br/>
+        <strong>${escapeHtml(o.name)}</strong> — ${escapeHtml(o.service)} • ${pickupLabel(o.pickupMode)}<br/>
         <div class="meta">${escapeHtml(o.email)} • ${escapeHtml(o.phone)} • ${escapeHtml(o.address)}${created ? ' • ' + created : ''}</div>
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
       `;
@@ -509,6 +519,8 @@ function openEditModal(order) {
     if (order.status === s) opt.selected = true;
     stat.appendChild(opt);
   });
+  const pickupSel = document.getElementById('edit-pickup');
+  if (pickupSel) pickupSel.value = order.pickupMode || 'personal';
   const paySel = document.getElementById('edit-payment');
   if (paySel) paySel.value = order.paymentMethod || 'cash';
   const typeSel = document.getElementById('edit-customer-type');
@@ -532,6 +544,7 @@ async function saveEdit() {
   const phone = document.getElementById('edit-phone').value.trim();
   const address = document.getElementById('edit-address').value.trim();
   const service = document.getElementById('edit-service').value;
+  const pickupMode = document.getElementById('edit-pickup') ? document.getElementById('edit-pickup').value : 'personal';
   const status = document.getElementById('edit-status').value;
   const paymentMethod = document.getElementById('edit-payment') ? document.getElementById('edit-payment').value : 'cash';
   const customerType = document.getElementById('edit-customer-type') ? document.getElementById('edit-customer-type').value : 'physical';
@@ -541,7 +554,7 @@ async function saveEdit() {
   try {
     const res = await fetch(`/order/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address, service, status, paymentMethod, customerType })
+      body: JSON.stringify({ name, email, phone, address, service, pickupMode, status, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     closeEditModal();
@@ -586,13 +599,15 @@ async function order() {
   const phone = customer.phone || '';
   const address = customer.address || '';
   const service = document.getElementById('service').value;
+  const pickupModeSel = document.getElementById('pickupMode');
+  const pickupMode = pickupModeSel ? pickupModeSel.value : 'personal';
   const paymentMethod = customer.paymentMethod || selectedCustomerPaymentMethod || 'cash';
   const customerType = customer.type || selectedCustomerType || 'physical';
 
   try {
     const res = await fetch('/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address, service, paymentMethod, customerType })
+      body: JSON.stringify({ name, email, phone, address, service, pickupMode, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     

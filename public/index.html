@@ -32,6 +32,11 @@
     <option>Čistilnica</option>
   </select>
 
+  <select id="pickupMode">
+    <option value="personal">Osebni prevzem</option>
+    <option value="delivery">Dostava</option>
+  </select>
+
   <button id="placeOrder">Potrditev naročila</button>
 
   <div id="orders">
@@ -70,6 +75,12 @@
             <option>Pranje</option>
             <option>Pranje in likanje</option>
             <option>Čistilnica</option>
+          </select>
+        </label>
+        <label>Način prevzema
+          <select id="edit-pickup">
+            <option value="personal">Osebni prevzem</option>
+            <option value="delivery">Dostava</option>
           </select>
         </label>
         <label>Status
