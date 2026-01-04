@@ -180,10 +180,12 @@ function createArticleSelect(selectedId) {
         item.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
         item.style.padding = '5px';
         item.style.cursor = 'pointer';
-        item.addEventListener('click', () => {
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault();
           input.value = a.name;
           container.dataset.selectedId = a._id;
           suggestions.style.display = 'none';
+          input.blur();
         });
         suggestions.appendChild(item);
       });
@@ -205,10 +207,12 @@ function createArticleSelect(selectedId) {
       item.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
       item.style.padding = '5px';
       item.style.cursor = 'pointer';
-      item.addEventListener('click', () => {
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
         input.value = a.name;
         container.dataset.selectedId = a._id;
         suggestions.style.display = 'none';
+        input.blur();
       });
       suggestions.appendChild(item);
     });
