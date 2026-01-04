@@ -106,7 +106,7 @@ function generateOrderPDF(order) {
 
 /* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
 let articlesCache = [];
-let isCompactOrdersView = false;
+let isCompactOrdersView = true;
 let expandedOrdersInCompactView = new Set();
 
 async function loadArticlesCache() {
