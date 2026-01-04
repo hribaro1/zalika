@@ -187,6 +187,9 @@ function createArticleSelect(selectedId) {
           container.dataset.selectedId = a._id;
           suggestions.style.display = 'none';
         });
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
         suggestions.appendChild(item);
       });
       suggestions.style.display = filtered.length ? 'block' : 'none';
@@ -213,6 +216,9 @@ function createArticleSelect(selectedId) {
         input.value = a.name;
         container.dataset.selectedId = a._id;
         suggestions.style.display = 'none';
+      });
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
       });
       suggestions.appendChild(item);
     });
