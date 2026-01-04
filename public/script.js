@@ -574,13 +574,17 @@ async function deleteOrder() {
 async function order() {
   let customer = selectedCustomerId ? customersCache.find(c => c._id === selectedCustomerId) : null;
 
-  // If no existing customer is selected, create a new one from entered data
+  // If no existing customer is selected, ask to create one from entered data
   if (!customer) {
     const nameInput = document.getElementById('customerInput').value.trim();
     const emailInput = (document.getElementById('email').value || '').trim();
     const phoneInput = (document.getElementById('phone').value || '').trim();
     const addressInput = (document.getElementById('address').value || '').trim();
     if (!nameInput) { alert('Vnesite ime stranke ali izberite iz predlog.'); return; }
+
+    const confirmCreate = confirm('Stranka ni v bazi. Ali jo želite dodati in nadaljevati z naročilom?');
+    if (!confirmCreate) return;
+
     try {
       const resCust = await fetch('/api/customers', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
