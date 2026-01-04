@@ -397,11 +397,13 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       
       const statusControl = document.createElement('div');
       statusControl.style.marginTop = '8px';
-      statusControl.appendChild(statusSelect);
-      paymentSelect.style.marginLeft = '8px';
-      customerTypeSelect.style.marginLeft = '8px';
+      statusControl.style.display = 'flex';
+      statusControl.style.gap = '8px';
+      statusControl.style.alignItems = 'center';
+      statusControl.style.justifyContent = 'flex-start';
       statusControl.appendChild(paymentSelect);
       statusControl.appendChild(customerTypeSelect);
+      statusControl.appendChild(statusSelect);
       div.appendChild(statusControl);
 
       if (historyDiv) div.appendChild(historyDiv);
