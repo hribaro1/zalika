@@ -409,11 +409,6 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       div.appendChild(itemsContainer);
       if (window.location.pathname !== '/archive') div.appendChild(addWrap);
 
-      const controls = document.createElement('div');
-      controls.appendChild(editBtn);
-      controls.appendChild(printBtn);
-      div.appendChild(controls);
-      
       const statusControl = document.createElement('div');
       statusControl.style.marginTop = '8px';
       statusControl.style.display = 'flex';
@@ -422,6 +417,11 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       statusControl.style.justifyContent = 'flex-start';
       statusControl.appendChild(statusSelect);
       div.appendChild(statusControl);
+
+      const controls = document.createElement('div');
+      controls.appendChild(editBtn);
+      controls.appendChild(printBtn);
+      div.appendChild(controls);
 
       if (historyDiv) div.appendChild(historyDiv);
 
