@@ -35,7 +35,13 @@
   <button id="placeOrder">Potrditev naročila</button>
 
   <div id="orders">
-    <h2>Pregled naročil</h2>
+    <div class="orders-header">
+      <h2>Pregled naročil</h2>
+      <div class="orders-toggle">
+        <button id="ordersCompact" class="small-btn" aria-label="Skrči pogled">−</button>
+        <button id="ordersExpanded" class="small-btn" aria-label="Razširi pogled">+</button>
+      </div>
+    </div>
     <div id="ordersList">Nalaganje...</div>
   </div>
 

@@ -2,8 +2,14 @@
 body { font-family: Arial, sans-serif; margin: 20px; }
 input, select { display:block; margin:8px 0; padding:8px; width:300px; max-width:100%; }
 #orders { margin-top: 24px; }
+.orders-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.orders-toggle .small-btn { min-width:44px; height:32px; margin-left:4px; }
+#ordersList { display:flex; flex-wrap:wrap; gap:8px; }
+#ordersList .order { flex:1 1 320px; max-width:420px; box-sizing:border-box; }
 .order { border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:4px; transition: background 0.15s ease, border-color 0.15s ease; }
 .meta { color:#666; font-size:12px; }
+.order-compact { padding:12px; font-size:14px; }
+.order-compact strong { display:block; margin-bottom:4px; }
 
 /* primary action */
 #placeOrder {
