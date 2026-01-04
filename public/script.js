@@ -288,10 +288,10 @@ async function addItemToOrder(orderId, orderEl) {
       body: JSON.stringify({ items })
     });
     if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    // refresh orders (server will also broadcast)
+    // Ensure order stays expanded when socket update arrives
     expandedOrdersInCompactView.add(orderId);
     pendingOrderScrollId = orderId;
-    loadOrders();
+    // Don't call loadOrders() - let socket update handle it (like updateStatus does)
   } catch (err) {
     console.error(err);
     alert('Napaka pri dodajanju pozicije. Preverite konzolo.');
@@ -934,7 +934,7 @@ async function saveEditItem() {
     closeEditItemModal();
     expandedOrdersInCompactView.add(orderId);
     pendingOrderScrollId = orderId;
-    loadOrders();
+    // Don't call loadOrders() - let socket update handle it
   } catch (err) {
     console.error(err);
     alert('Napaka pri posodabljanju pozicije. Preverite konzolo.');
@@ -973,7 +973,7 @@ async function deleteEditItem() {
     closeEditItemModal();
     expandedOrdersInCompactView.add(orderId);
     pendingOrderScrollId = orderId;
-    loadOrders();
+    // Don't call loadOrders() - let socket update handle it
   } catch (err) {
     console.error(err);
     alert('Napaka pri brisanju pozicije. Preverite konzolo.');
