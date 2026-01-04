@@ -185,7 +185,6 @@ function createArticleSelect(selectedId) {
           input.value = a.name;
           container.dataset.selectedId = a._id;
           suggestions.style.display = 'none';
-          input.blur();
         });
         suggestions.appendChild(item);
       });
@@ -212,7 +211,6 @@ function createArticleSelect(selectedId) {
         input.value = a.name;
         container.dataset.selectedId = a._id;
         suggestions.style.display = 'none';
-        input.blur();
       });
       suggestions.appendChild(item);
     });
