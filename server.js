@@ -33,9 +33,6 @@ function requireAuth(req, res, next) {
   res.redirect('/login');
 }
 
-// Serve static files (but protect them with auth)
-app.use(express.static(path.join(__dirname, "public")));
-
 // Login page (unprotected)
 app.get('/login', (req, res) => {
   // If already authenticated, redirect to home
@@ -68,14 +65,20 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
+// Serve static files with authentication
+app.use('/styles.css', express.static(path.join(__dirname, 'public', 'styles.css')));
+app.use('/login.html', express.static(path.join(__dirname, 'public', 'login.html')));
+
 // Protect all other routes
 app.use((req, res, next) => {
-  // Skip authentication check for login-related routes
-  if (req.path === '/login' || req.path === '/api/login') {
+  if (req.path === '/login' || req.path === '/api/login' || req.path === '/styles.css') {
     return next();
   }
   requireAuth(req, res, next);
 });
+
+// Serve remaining static files (protected)
+app.use(express.static(path.join(__dirname, "public")));
 
 // Serve archive page
 app.get('/archive', (req, res) => {
@@ -87,7 +90,7 @@ app.get('/completed', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'completed.html'));
 });
 
-// Serve customers management page (explicit route)
+// Serve customers management page
 app.get('/customers', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'customers.html'));
 });
@@ -124,7 +127,6 @@ async function generateOrderNumber() {
   return `${year}-${month}-${String(seq).padStart(3, '0')}`;
 }
 
-// --- Orders schema (z dodatkom items) ---
 const OrderSchema = new mongoose.Schema({
   name: String,
   service: String,
@@ -151,17 +153,16 @@ const OrderSchema = new mongoose.Schema({
     articleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Article' },
     name: String,
     unit: String,
-    price: Number,       // net price
+    price: Number,
     vatPercent: Number,
-    finalPrice: Number,  // price with VAT
+    finalPrice: Number,
     quantity: { type: Number, min: 1, default: 1 },
-    lineTotal: Number    // finalPrice * quantity
+    lineTotal: Number
   }]
 }, { timestamps: true });
 
 const Order = mongoose.model("Order", OrderSchema);
 
-// --- Customers (stranke) model + API ---
 const CustomerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, trim: true, lowercase: true },
@@ -174,17 +175,14 @@ const CustomerSchema = new mongoose.Schema({
 
 const Customer = mongoose.model('Customer', CustomerSchema);
 
-// --- Articles (artikli) model + API ---
 const ArticleSchema = new mongoose.Schema({
-  name: { type: String, required: true },              // naziv
-  unit: { type: String, required: true },              // enota mere
-  price: { type: Number, required: true, min: 0 },     // osnovna cena (neto)
-  vatPercent: { type: Number, required: true, min: 0 },// DDV %
-  finalPrice: { type: Number, required: true, min: 0 } // cena z DDV
+  name: { type: String, required: true },
+  unit: { type: String, required: true },
+  price: { type: Number, required: true, min: 0 },
+  vatPercent: { type: Number, required: true, min: 0 },
+  finalPrice: { type: Number, required: true, min: 0 }
 }, { timestamps: true });
 
-// pre-validate: coerce price/vatPercent to Number and compute finalPrice
-// NOTE: use synchronous hook without 'next' to avoid "next is not a function" errors
 ArticleSchema.pre('validate', function() {
   const p = Number(this.price);
   const v = Number(this.vatPercent);
