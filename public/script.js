@@ -294,7 +294,7 @@ async function addItemToOrder(orderId, orderEl) {
   const container = orderEl.querySelector('.article-select-container');
   const qtyIn = orderEl.querySelector('.article-qty');
   const articleId = container ? container.dataset.selectedId : '';
-  const qty = Math.max(0.1, parseFloat(qtyIn ? qtyIn.value : 1) || 1);
+  const qty = Math.max(0, parseFloat(qtyIn ? qtyIn.value : 1) || 0);
   if (!articleId) { alert('Izberite artikel.'); return; }
 
   const art = articlesCache.find(a => String(a._id) === String(articleId));
@@ -509,7 +509,7 @@ function renderOrdersGroup(orders, list) {
       articleSel.style.marginTop = '8px';
       articleSel.style.marginRight = '12px';
       const qtyIn = document.createElement('input');
-      qtyIn.type = 'number'; qtyIn.min = '0.1'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
+      qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
       qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
 
       // ✅ Prevent quantity input clicks from propagating
