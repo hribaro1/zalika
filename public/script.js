@@ -580,6 +580,8 @@ function renderOrdersGroup(orders, list) {
           e.target.tagName === 'BUTTON' ||
           e.target.tagName === 'SELECT' ||
           e.target.tagName === 'INPUT' ||
+          e.target.classList.contains('article-input') ||
+          e.target.classList.contains('article-suggestion') ||
           e.target.closest('.article-select-container') ||
           e.target.closest('.article-suggestions') ||
           e.target.closest('.add-item-wrap') ||
