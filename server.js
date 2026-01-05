@@ -86,7 +86,7 @@ const OrderSchema = new mongoose.Schema({
     price: Number,
     vatPercent: Number,
     finalPrice: Number,
-    quantity: { type: Number, min: 1, default: 1 },
+    quantity: { type: Number, min: 0, default: 1 },
     lineTotal: Number
   }]
 }, { timestamps: true });
