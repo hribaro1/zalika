@@ -187,7 +187,7 @@ function createArticleSelect(selectedId) {
   container.appendChild(input);
   container.appendChild(suggestions);
   input.addEventListener('focus', (e) => {
-    e.stopPropagation();
+    e.stopPropagation(); // TA JE ŽE TU
     const q = input.value.trim().toLowerCase();
     if (!q) {
       const filtered = articlesCache;
@@ -243,7 +243,10 @@ function createArticleSelect(selectedId) {
     });
     suggestions.style.display = filtered.length ? 'block' : 'none';
   });
-  input.addEventListener('blur', () => setTimeout(() => suggestions.style.display = 'none', 150));
+  input.addEventListener('blur', (e) => {
+    if (e) e.stopPropagation(); // ← DODAJ TO!
+    setTimeout(() => suggestions.style.display = 'none', 150);
+  });
   if (selectedId) {
     const art = articlesCache.find(a => String(a._id) === String(selectedId));
     if (art) {
