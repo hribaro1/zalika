@@ -496,7 +496,10 @@ function renderOrdersGroup(orders, list) {
       const addBtn = document.createElement('button');
       addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
       addBtn.style.marginLeft = '8px';
-      addBtn.addEventListener('click', () => addItemToOrder(o._id, div));
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();  // DODAJ TO!
+        addItemToOrder(o._id, div);
+      });
       addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
 
       const statusSelect = document.createElement('select');
