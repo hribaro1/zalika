@@ -1,3 +1,5 @@
+let customersCache = [];
+
 function isValidEmail(email) { return /.+@.+\..+/.test(email); }
 function isValidPhone(phone) { return /^[+\d\s\-().]{6,20}$/.test(phone); }
 
@@ -6,7 +8,7 @@ async function loadCustomersCache() {
     const res = await fetch('/api/customers');
     if (!res.ok) throw new Error('Failed to fetch customers');
     const customers = await res.json();
-    customersCache = customers; // shrani lokalno
+    customersCache = customers;
     customersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } catch (err) {
     console.error('Could not load customers', err);
@@ -52,7 +54,6 @@ async function addCustomer() {
   try {
     const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    // success: refresh list (no alert)
     document.getElementById('c-name').value = '';
     document.getElementById('c-email').value = '';
     document.getElementById('c-phone').value = '';
@@ -67,7 +68,6 @@ async function deleteCustomer(id) {
   try {
     const res = await fetch('/api/customers/' + id, { method: 'DELETE' });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    // success: refresh list
     loadCustomersCache().then(applyFilter);
   } catch (err) { console.error(err); alert('Napaka pri brisanju.'); }
 }
@@ -101,7 +101,6 @@ async function saveEdit() {
   try {
     const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
-    // success: close modal and refresh list (no alert)
     closeEdit(); loadCustomersCache().then(applyFilter);
   } catch (err) { console.error(err); alert('Napaka pri posodabljanju.'); }
 }

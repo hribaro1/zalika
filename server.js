@@ -1,12 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const express = require("express");
-const mongoose = require("mongoose");
 const path = require("path");
 const http = require("http");
 require("dotenv").config();
 
 const app = express();
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -19,8 +21,16 @@ app.get('/archive', (req, res) => {
 app.get('/completed', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'completed.html'));
 });
-const { Server } = require("socket.io");
-const io = new Server(server);
+
+// Serve customers management page (explicit route)
+app.get('/customers', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'customers.html'));
+});
+
+// Serve articles management page
+app.get('/articles', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'articles.html'));
+});
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -130,16 +140,6 @@ const Article = mongoose.model('Article', ArticleSchema);
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
-});
-
-// Serve customers management page (explicit route)
-app.get('/customers', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'customers.html'));
-});
-
-// Serve articles management page
-app.get('/articles', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'articles.html'));
 });
 
 // Customers API
@@ -293,7 +293,6 @@ app.get("/api/completed", async (req, res) => {
 });
 
 // Update whole order (name, email, phone, address, service, status, items)
-// Replace the previous app.put("/order/:id", ...) with the safer version below:
 app.put("/order/:id", async (req, res) => {
   try {
     const updates = req.body;
@@ -358,7 +357,7 @@ app.put("/order/:id", async (req, res) => {
   }
 });
 
-// Update only status (use findByIdAndUpdate without runValidators to avoid failing due to other missing fields)
+// Update only status
 app.patch("/order/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
