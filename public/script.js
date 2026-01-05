@@ -972,7 +972,7 @@ async function saveEditItem() {
   if (!orderId || isNaN(itemIndex)) return;
   
   const qtyInput = document.getElementById('edit-item-quantity');
-  const quantity = Math.max(0.1, parseFloat(qtyInput.value) || 1);
+  const quantity = Math.max(0, parseFloat(qtyInput.value) || 0);
   
   const articleContainer = document.getElementById('edit-item-article-container').querySelector('.article-select-container');
   const articleId = articleContainer ? articleContainer.dataset.selectedId : '';

@@ -293,7 +293,7 @@ app.put("/order/:id", async (req, res) => {
         if (!it.articleId) continue;
         const art = await Article.findById(it.articleId).lean();
         if (!art) continue;
-        const qty = Number(it.quantity) || 1;
+        const qty = typeof it.quantity === 'number' ? it.quantity : (Number(it.quantity) || 1);
         const finalPrice = Number(art.finalPrice) || 0;
         const lineTotal = Math.round(finalPrice * qty * 100) / 100;
         resolvedItems.push({
