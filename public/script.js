@@ -186,8 +186,9 @@ function createArticleSelect(selectedId) {
   
   container.appendChild(input);
   container.appendChild(suggestions);
+  
   input.addEventListener('focus', (e) => {
-    e.stopPropagation(); // TA JE ŽE TU
+    e.stopPropagation();
     const q = input.value.trim().toLowerCase();
     if (!q) {
       const filtered = articlesCache;
@@ -205,14 +206,12 @@ function createArticleSelect(selectedId) {
           container.dataset.selectedId = a._id;
           suggestions.style.display = 'none';
         });
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-        });
         suggestions.appendChild(item);
       });
       suggestions.style.display = filtered.length ? 'block' : 'none';
     }
   });
+  
   input.addEventListener('input', (e) => {
     e.stopPropagation();
     const q = input.value.trim().toLowerCase();
@@ -236,17 +235,17 @@ function createArticleSelect(selectedId) {
         container.dataset.selectedId = a._id;
         suggestions.style.display = 'none';
       });
-      item.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
       suggestions.appendChild(item);
     });
     suggestions.style.display = filtered.length ? 'block' : 'none';
   });
+  
   input.addEventListener('blur', (e) => {
-    if (e) e.stopPropagation(); // ← DODAJ TO!
-    setTimeout(() => suggestions.style.display = 'none', 150);
+    e.stopPropagation();
+    // Increase timeout to ensure mousedown fires first
+    setTimeout(() => suggestions.style.display = 'none', 200);
   });
+  
   if (selectedId) {
     const art = articlesCache.find(a => String(a._id) === String(selectedId));
     if (art) {
