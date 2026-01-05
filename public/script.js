@@ -934,7 +934,7 @@ function openEditItemModal(orderId, itemIndex, item) {
   modal.style.display = 'flex';
   
   // Set current values
-  document.getElementById('edit-item-quantity').value = item.quantity || 1;
+  document.getElementById('edit-item-quantity').value = typeof item.quantity === 'number' ? item.quantity : 1;
   
   // Setup article select
   const articleContainer = document.getElementById('edit-item-article-container');
