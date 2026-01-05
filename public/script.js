@@ -279,7 +279,7 @@ function renderOrderItems(container, items, orderId) {
     row.className = 'order-item';
     row.style.cursor = 'pointer';
     row.title = 'Kliknite za urejanje pozicije';
-    const qty = it.quantity || 1;
+    const qty = typeof it.quantity === 'number' ? it.quantity : 1;
     const qtyDisplay = Number(qty) % 1 === 0 ? qty : Number(qty).toFixed(1);
     const name = it.name || '(artikel)';
     const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
