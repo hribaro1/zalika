@@ -199,12 +199,17 @@ function createArticleSelect(selectedId) {
         item.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
         item.style.padding = '5px';
         item.style.cursor = 'pointer';
-        item.addEventListener('mousedown', (e) => {
+        // ✅ DODAJ click handler z stopPropagation
+        item.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
           input.value = a.name;
           container.dataset.selectedId = a._id;
           suggestions.style.display = 'none';
+        });
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
         });
         suggestions.appendChild(item);
       });
@@ -228,12 +233,17 @@ function createArticleSelect(selectedId) {
       item.textContent = `${a.name} — ${Number(a.finalPrice).toFixed(2)} €`;
       item.style.padding = '5px';
       item.style.cursor = 'pointer';
-      item.addEventListener('mousedown', (e) => {
+      // ✅ DODAJ click handler z stopPropagation
+      item.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         input.value = a.name;
         container.dataset.selectedId = a._id;
         suggestions.style.display = 'none';
+      });
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
       });
       suggestions.appendChild(item);
     });
