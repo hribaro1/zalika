@@ -490,17 +490,29 @@ function renderOrdersGroup(orders, list) {
       // Add item form
       const addWrap = document.createElement('div');
       addWrap.className = 'add-item-wrap';
+
+      // ✅ Prevent entire add-item section from triggering parent click
+      addWrap.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
       const articleSel = createArticleSelect();
       articleSel.style.marginTop = '8px';
       articleSel.style.marginRight = '12px';
       const qtyIn = document.createElement('input');
       qtyIn.type = 'number'; qtyIn.min = '0.1'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
       qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
+
+      // ✅ Prevent quantity input clicks from propagating
+      qtyIn.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
       const addBtn = document.createElement('button');
       addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
       addBtn.style.marginLeft = '8px';
       addBtn.addEventListener('click', (e) => {
-        e.stopPropagation();  // DODAJ TO!
+        e.stopPropagation();
         addItemToOrder(o._id, div);
       });
       addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
