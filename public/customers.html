@@ -12,7 +12,8 @@
     <a href="/completed">Končano</a> |
     <a href="/archive">Oddano</a> |
     <a href="/articles">Artikli</a> |
-    <a href="/customers">Stranke</a>
+    <a href="/customers">Stranke</a> |
+    <button id="logoutBtn" style="float: right; background: #dc3545; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 4px;">Odjava</button>
   </nav>
 
   <h1>Upravljanje strank</h1>
@@ -69,5 +70,13 @@
   </div>
 
   <script src="customers.js"></script>
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (confirm('Ali se želite odjaviti?')) {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/login';
+      }
+    });
+  </script>
 </body>
 </html>

@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const http = require("http");
+const session = require("express-session");
 require("dotenv").config();
 
 const app = express();
@@ -10,7 +11,71 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 app.use(express.json());
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'zalika-secret-key-change-this',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // set to true if using HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Authentication middleware
+function requireAuth(req, res, next) {
+  if (req.session && req.session.authenticated) {
+    return next();
+  }
+  // Redirect to login page
+  res.redirect('/login');
+}
+
+// Serve static files (but protect them with auth)
 app.use(express.static(path.join(__dirname, "public")));
+
+// Login page (unprotected)
+app.get('/login', (req, res) => {
+  // If already authenticated, redirect to home
+  if (req.session && req.session.authenticated) {
+    return res.redirect('/');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Login API endpoint
+app.post('/api/login', (req, res) => {
+  const { password } = req.body;
+  const correctPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  
+  if (password === correctPassword) {
+    req.session.authenticated = true;
+    res.json({ success: true });
+  } else {
+    res.json({ success: false, error: 'Napačno geslo' });
+  }
+});
+
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to logout' });
+    }
+    res.json({ success: true });
+  });
+});
+
+// Protect all other routes
+app.use((req, res, next) => {
+  // Skip authentication check for login-related routes
+  if (req.path === '/login' || req.path === '/api/login') {
+    return next();
+  }
+  requireAuth(req, res, next);
+});
 
 // Serve archive page
 app.get('/archive', (req, res) => {
