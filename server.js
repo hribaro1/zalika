@@ -2,7 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const http = require("http");
-const session = require("express-session");
 require("dotenv").config();
 
 const app = express();
@@ -11,73 +10,6 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 app.use(express.json());
-
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'zalika-secret-key-change-this',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // set to true if using HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
-// Authentication middleware
-function requireAuth(req, res, next) {
-  if (req.session && req.session.authenticated) {
-    return next();
-  }
-  // Redirect to login page
-  res.redirect('/login');
-}
-
-// Login page (unprotected)
-app.get('/login', (req, res) => {
-  // If already authenticated, redirect to home
-  if (req.session && req.session.authenticated) {
-    return res.redirect('/');
-  }
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// Login API endpoint
-app.post('/api/login', (req, res) => {
-  const { password } = req.body;
-  const correctPassword = process.env.ADMIN_PASSWORD || 'admin123';
-  
-  if (password === correctPassword) {
-    req.session.authenticated = true;
-    res.json({ success: true });
-  } else {
-    res.json({ success: false, error: 'Napačno geslo' });
-  }
-});
-
-// Logout endpoint
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    res.json({ success: true });
-  });
-});
-
-// Serve static files with authentication
-app.use('/styles.css', express.static(path.join(__dirname, 'public', 'styles.css')));
-app.use('/login.html', express.static(path.join(__dirname, 'public', 'login.html')));
-
-// Protect all other routes
-app.use((req, res, next) => {
-  if (req.path === '/login' || req.path === '/api/login' || req.path === '/styles.css') {
-    return next();
-  }
-  requireAuth(req, res, next);
-});
-
-// Serve remaining static files (protected)
 app.use(express.static(path.join(__dirname, "public")));
 
 // Serve archive page
@@ -111,7 +43,6 @@ async function generateOrderNumber() {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   
-  // Find the highest order number for current month
   const prefix = `${year}-${month}-`;
   const lastOrder = await Order.findOne({
     orderNumber: { $regex: `^${prefix}` }
@@ -119,7 +50,6 @@ async function generateOrderNumber() {
   
   let seq = 1;
   if (lastOrder && lastOrder.orderNumber) {
-    // Extract sequence number from last order
     const lastSeq = parseInt(lastOrder.orderNumber.split('-')[2]);
     seq = lastSeq + 1;
   }
@@ -199,7 +129,6 @@ ArticleSchema.pre('validate', function() {
 
 const Article = mongoose.model('Article', ArticleSchema);
 
-// Socket.IO: basic connect logging
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
@@ -302,12 +231,10 @@ app.delete('/api/articles/:id', async (req, res) => {
   }
 });
 
-// Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Create order
 app.post("/order", async (req, res) => {
   try {
     const order = new Order(req.body);
@@ -322,7 +249,6 @@ app.post("/order", async (req, res) => {
   }
 });
 
-// List orders (most recent first, excluding archived and completed)
 app.get("/orders", async (req, res) => {
   try {
     const orders = await Order.find({status: {$nin: ["Oddano", "Končano"]}}).sort({ createdAt: -1 }).lean();
@@ -333,7 +259,6 @@ app.get("/orders", async (req, res) => {
   }
 });
 
-// List archived orders
 app.get("/api/archive", async (req, res) => {
   try {
     const orders = await Order.find({status: "Oddano"}).sort({ createdAt: -1 }).lean();
@@ -344,7 +269,6 @@ app.get("/api/archive", async (req, res) => {
   }
 });
 
-// List completed orders
 app.get("/api/completed", async (req, res) => {
   try {
     const orders = await Order.find({status: {$in: ["Končano", "Oddano"]}}).sort({ createdAt: -1 }).lean();
@@ -355,25 +279,18 @@ app.get("/api/completed", async (req, res) => {
   }
 });
 
-// Update whole order (name, email, phone, address, service, status, items)
 app.put("/order/:id", async (req, res) => {
   try {
     const updates = req.body;
 
-    // validate status if provided
     if (updates.status && !STATUS_OPTIONS.includes(updates.status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
 
-    // If items are provided, compute canonical item fields (name, finalPrice, lineTotal) from Article records
     if (Array.isArray(updates.items)) {
       const resolvedItems = [];
       for (const it of updates.items) {
-        // expecting it.articleId and it.quantity
-        if (!it.articleId) {
-          // If articleId missing, skip or accept a custom item if you want; here we'll skip
-          continue;
-        }
+        if (!it.articleId) continue;
         const art = await Article.findById(it.articleId).lean();
         if (!art) continue;
         const qty = Number(it.quantity) || 1;
@@ -393,20 +310,16 @@ app.put("/order/:id", async (req, res) => {
       updates.items = resolvedItems;
     }
 
-    // apply updates using findById to ensure full document validators and hooks run predictably
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    // If updating status and no history, initialize
     if (updates.status && (!order.statusHistory || order.statusHistory.length === 0)) {
       order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
     }
 
-    // set provided top-level fields
     const allowed = ['name','service','address','email','phone','status','items','paymentMethod','customerType','pickupMode'];
     allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
 
-    // If status changed, add to history
     if (updates.status && updates.status !== order.status) {
       order.statusHistory.push({ status: updates.status, timestamp: new Date() });
     }
@@ -420,7 +333,6 @@ app.put("/order/:id", async (req, res) => {
   }
 });
 
-// Update only status
 app.patch("/order/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
@@ -431,12 +343,10 @@ app.patch("/order/:id/status", async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    // Initialize history if missing
     if (!order.statusHistory || order.statusHistory.length === 0) {
       order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
     }
 
-    // Add to history if status changed
     if (status !== order.status) {
       order.statusHistory.push({ status, timestamp: new Date() });
       order.status = status;
@@ -451,7 +361,6 @@ app.patch("/order/:id/status", async (req, res) => {
   }
 });
 
-// Delete order
 app.delete("/order/:id", async (req, res) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);
