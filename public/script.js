@@ -769,7 +769,12 @@ async function order() {
       customer = created.customer;
       if (customer && customer._id) {
         customersCache.push(customer);
-        customersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        customersCache.sort((a, b) => {
+          const countA = a.usageCount || 0;
+          const countB = b.usageCount || 0;
+          if (countB !== countA) return countB - countA;
+          return (a.name || '').localeCompare(b.name || '');
+        });
         selectedCustomerId = customer._id;
         selectedCustomerPaymentMethod = customer.paymentMethod || selectedCustomerPaymentMethod;
         selectedCustomerType = customer.type || selectedCustomerType;
@@ -794,7 +799,7 @@ async function order() {
   try {
     const res = await fetch('/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, address, service, pickupMode, paymentMethod, customerType })
+      body: JSON.stringify({ customerId: customer._id, name, email, phone, address, service, pickupMode, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     
@@ -863,7 +868,13 @@ async function loadCustomers() {
     if (!res.ok) throw new Error('Failed to fetch customers');
     const customers = await res.json();
     customersCache = customers; // shrani lokalno
-    customersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    customersCache.sort((a, b) => {
+      const countA = a.usageCount || 0;
+      const countB = b.usageCount || 0;
+      // Sort by usageCount descending (largest first), then by name ascending
+      if (countB !== countA) return countB - countA;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   } catch (err) {
     console.error('Could not load customers', err);
   }

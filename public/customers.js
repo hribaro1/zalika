@@ -9,7 +9,13 @@ async function loadCustomersCache() {
     if (!res.ok) throw new Error('Failed to fetch customers');
     const customers = await res.json();
     customersCache = customers;
-    customersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    customersCache.sort((a, b) => {
+      const countA = a.usageCount || 0;
+      const countB = b.usageCount || 0;
+      // Sort by usageCount descending (largest first), then by name ascending
+      if (countB !== countA) return countB - countA;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   } catch (err) {
     console.error('Could not load customers', err);
   }
@@ -25,7 +31,8 @@ function renderCustomers(customers) {
     const textDiv = document.createElement('div');
     const typeLabel = c.type === 'company' ? 'Podjetje' : 'Fizična oseba';
     const paymentLabel = c.paymentMethod === 'invoice' ? 'Na račun' : 'Gotovina';
-    textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''} • ${typeLabel} • ${paymentLabel}</div>`;
+    const usageCount = c.usageCount || 0;
+    textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''} • ${typeLabel} • ${paymentLabel} • Števec: ${usageCount}</div>`;
     el.appendChild(textDiv);
     el.addEventListener('click', () => openEdit(c));
     list.appendChild(el);

@@ -70,6 +70,7 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   pickupMode: { type: String, enum: ['personal', 'delivery'], default: 'personal' },
   paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' },
   customerType: { type: String, enum: ['physical', 'company'], default: 'physical' },
@@ -100,7 +101,8 @@ const CustomerSchema = new mongoose.Schema({
   address: { type: String },
   notes: { type: String },
   type: { type: String, enum: ['physical', 'company'], default: 'physical' },
-  paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' }
+  paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' },
+  usageCount: { type: Number, default: 0, min: 0 }
 }, { timestamps: true });
 
 const Customer = mongoose.model('Customer', CustomerSchema);
@@ -242,6 +244,12 @@ app.post("/order", async (req, res) => {
     order.orderNumber = await generateOrderNumber();
     order.statusHistory = [{ status: order.status, timestamp: new Date() }];
     await order.save();
+    
+    // Increment customer usage count if customerId is provided
+    if (order.customerId) {
+      await Customer.findByIdAndUpdate(order.customerId, { $inc: { usageCount: 1 } });
+    }
+    
     io.emit('orderCreated', order);
     res.json({ message: "Order placed!", order });
   } catch (err) {
