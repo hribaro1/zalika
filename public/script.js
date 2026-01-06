@@ -565,7 +565,6 @@ function renderOrdersGroup(orders, list) {
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
         <div class="meta">Način plačila: ${paymentLabel(o.paymentMethod)}</div>
         <div class="meta">Tip stranke: ${customerTypeLabel(o.customerType)}</div>
-        ${created ? `<div class="meta">Naročilo kreirano: ${created}</div>` : ''}
       `;
 
       // append items container and add form
