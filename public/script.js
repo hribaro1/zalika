@@ -141,6 +141,13 @@ async function loadArticlesCache() {
     const res = await fetch('/api/articles');
     if (!res.ok) throw new Error('Failed to fetch articles');
     articlesCache = await res.json();
+    articlesCache.sort((a, b) => {
+      const countA = a.usageCount || 0;
+      const countB = b.usageCount || 0;
+      // Sort by usageCount descending (largest first), then by name ascending
+      if (countB !== countA) return countB - countA;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   } catch (err) {
     console.error('Could not load articles', err);
     articlesCache = [];

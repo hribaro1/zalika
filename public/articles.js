@@ -21,7 +21,13 @@ async function loadArticlesCache() {
     if (!res.ok) throw new Error('Failed to fetch articles');
     const articles = await res.json();
     articlesCache = articles; // shrani lokalno
-    articlesCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    articlesCache.sort((a, b) => {
+      const countA = a.usageCount || 0;
+      const countB = b.usageCount || 0;
+      // Sort by usageCount descending (largest first), then by name ascending
+      if (countB !== countA) return countB - countA;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   } catch (err) {
     console.error('Could not load articles', err);
   }
