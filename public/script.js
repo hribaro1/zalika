@@ -811,6 +811,11 @@ async function order() {
     const data = await res.json();
     const newOrderId = data.order ? data.order._id : null;
     
+    // Add new order to expanded set so it stays open
+    if (newOrderId) {
+      expandedOrders.add(newOrderId);
+    }
+    
     // Clear all input fields after successful order
     document.getElementById('customerInput').value = '';
     document.getElementById('email').value = '';
