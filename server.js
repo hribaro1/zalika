@@ -76,6 +76,7 @@ const OrderSchema = new mongoose.Schema({
     trim: true
   },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  customerNotes: String,
   pickupMode: { type: String, enum: ['personal', 'delivery'], default: 'personal' },
   paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' },
   customerType: { type: String, enum: ['physical', 'company'], default: 'physical' },
@@ -385,7 +386,7 @@ app.put("/order/:id", async (req, res) => {
       order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
     }
 
-    const allowed = ['name','service','address','email','phone','status','items','paymentMethod','customerType','pickupMode'];
+    const allowed = ['name','service','address','email','phone','status','items','paymentMethod','customerType','pickupMode','customerNotes'];
     allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
 
     if (updates.status && updates.status !== order.status) {

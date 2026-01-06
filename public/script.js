@@ -603,6 +603,7 @@ function renderOrdersGroup(orders, list) {
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
         <div class="meta">Način plačila: ${paymentLabel(o.paymentMethod)}</div>
         <div class="meta">Tip stranke: ${customerTypeLabel(o.customerType)}</div>
+        ${o.customerNotes ? `<div class="meta">Opombe stranke: ${escapeHtml(o.customerNotes)}</div>` : ''}
       `;
 
       // append items container and add form
@@ -716,7 +717,10 @@ function openEditModal(order) {
   if (paySel) paySel.value = order.paymentMethod || 'cash';
   const typeSel = document.getElementById('edit-customer-type');
   if (typeSel) typeSel.value = order.customerType || 'physical';
+  const notesSel = document.getElementById('edit-customer-notes');
+  if (notesSel) notesSel.value = order.customerNotes || '';
   modal.dataset.editingId = order._id;
+  modal.dataset.customerId = order.customerId || '';
   document.getElementById('edit-name').focus();
 }
 
@@ -736,15 +740,30 @@ async function saveEdit() {
   const status = document.getElementById('edit-status').value;
   const paymentMethod = document.getElementById('edit-payment') ? document.getElementById('edit-payment').value : 'cash';
   const customerType = document.getElementById('edit-customer-type') ? document.getElementById('edit-customer-type').value : 'physical';
+  const customerNotes = document.getElementById('edit-customer-notes') ? document.getElementById('edit-customer-notes').value.trim() : '';
+  const customerId = modal.dataset.customerId;
 
   if (!name) { alert('Ime mora biti izpolnjeno.'); return; }
 
   try {
+    // Update order
     const res = await fetch(`/order/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, service, pickupMode, status, paymentMethod, customerType })
+      body: JSON.stringify({ name, service, pickupMode, status, paymentMethod, customerType, customerNotes })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
+    
+    // Update customer notes if customerId exists
+    if (customerId) {
+      const custRes = await fetch(`/api/customers/${customerId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: customerNotes })
+      });
+      if (!custRes.ok) {
+        console.warn('Failed to update customer notes');
+      }
+    }
+    
     closeEditModal();
     // server will broadcast; loadOrders() will run on other clients via socket, here refresh to be immediate
     loadOrders();
