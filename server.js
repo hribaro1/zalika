@@ -102,6 +102,7 @@ const CustomerSchema = new mongoose.Schema({
   notes: { type: String },
   type: { type: String, enum: ['physical', 'company'], default: 'physical' },
   paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' },
+  pickupMode: { type: String, enum: ['personal', 'delivery'], default: 'personal' },
   usageCount: { type: Number, default: 0, min: 0 }
 }, { timestamps: true });
 

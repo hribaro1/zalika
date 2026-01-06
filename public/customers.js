@@ -31,8 +31,9 @@ function renderCustomers(customers) {
     const textDiv = document.createElement('div');
     const typeLabel = c.type === 'company' ? 'Podjetje' : 'Fizična oseba';
     const paymentLabel = c.paymentMethod === 'invoice' ? 'Na račun' : 'Gotovina';
+    const pickupLabel = c.pickupMode === 'delivery' ? 'Dostava' : 'Osebni prevzem';
     const usageCount = c.usageCount || 0;
-    textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''} • ${typeLabel} • ${paymentLabel} • Števec: ${usageCount}</div>`;
+    textDiv.innerHTML = `<strong>${escape(c.name)}</strong> <div class="meta">${escape(c.email)} • ${escape(c.phone)}${c.address ? ' • ' + escape(c.address) : ''} • ${typeLabel} • ${paymentLabel} • ${pickupLabel} • Števec: ${usageCount}</div>`;
     el.appendChild(textDiv);
     el.addEventListener('click', () => openEdit(c));
     list.appendChild(el);
@@ -56,10 +57,11 @@ async function addCustomer() {
   const address = document.getElementById('c-address').value.trim();
   const type = document.getElementById('c-type').value;
   const paymentMethod = document.getElementById('c-payment').value;
+  const pickupMode = document.getElementById('c-pickup').value;
   const notes = document.getElementById('c-notes').value.trim();
   if (!name) return alert('Vnesite ime.');
   try {
-    const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, notes }) });
+    const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, pickupMode, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
     document.getElementById('c-name').value = '';
     document.getElementById('c-email').value = '';
@@ -89,6 +91,7 @@ function openEdit(c) {
   document.getElementById('edit-c-address').value = c.address || '';
   document.getElementById('edit-c-type').value = c.type || 'physical';
   document.getElementById('edit-c-payment').value = c.paymentMethod || 'cash';
+  document.getElementById('edit-c-pickup').value = c.pickupMode || 'personal';
   document.getElementById('edit-c-notes').value = c.notes || '';
 }
 
@@ -103,10 +106,11 @@ async function saveEdit() {
   const address = document.getElementById('edit-c-address').value.trim();
   const type = document.getElementById('edit-c-type').value;
   const paymentMethod = document.getElementById('edit-c-payment').value;
+  const pickupMode = document.getElementById('edit-c-pickup').value;
   const notes = document.getElementById('edit-c-notes').value.trim();
   if (!name) return alert('Vnesite ime.');
   try {
-    const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, notes }) });
+    const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, pickupMode, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
     closeEdit(); loadCustomersCache().then(applyFilter);
   } catch (err) { console.error(err); alert('Napaka pri posodabljanju.'); }

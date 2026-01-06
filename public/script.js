@@ -753,6 +753,8 @@ async function order() {
     if (!confirmCreate) return;
 
     try {
+      const pickupModeSel = document.getElementById('pickupMode');
+      const pickupMode = pickupModeSel ? pickupModeSel.value : 'personal';
       const resCust = await fetch('/api/customers', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -761,7 +763,8 @@ async function order() {
           phone: phoneInput,
           address: addressInput,
           paymentMethod: selectedCustomerPaymentMethod || 'cash',
-          type: selectedCustomerType || 'physical'
+          type: selectedCustomerType || 'physical',
+          pickupMode: pickupMode
         })
       });
       if (!resCust.ok) { const err = await resCust.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Napaka pri shranjevanju stranke'); }
@@ -911,6 +914,11 @@ function chooseCustomer(c) {
   // store defaults for new order submission
   selectedCustomerPaymentMethod = c.paymentMethod || 'cash';
   selectedCustomerType = c.type || 'physical';
+  // Set pickupMode from customer default
+  const pickupModeSel = document.getElementById('pickupMode');
+  if (pickupModeSel && c.pickupMode) {
+    pickupModeSel.value = c.pickupMode;
+  }
   // hide suggestions
   const box = document.getElementById('customerSuggestions');
   if (box) { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }
