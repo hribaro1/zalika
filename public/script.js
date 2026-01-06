@@ -364,6 +364,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     let url = '/orders';
     if (window.location.pathname === '/archive') url = '/api/archive';
     else if (window.location.pathname === '/completed') url = '/api/completed';
+    else if (window.location.pathname === '/delivery') url = '/api/delivery';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Network response not ok');
     const orders = await res.json();

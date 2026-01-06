@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Naročila za dostavo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="main-nav">
+    <a href="/">Naročila</a> |
+    <a href="/completed">Končano</a> |
+    <a href="/archive">Oddano</a> |
+    <a href="/delivery">Dostava</a> |
+    <a href="/articles">Artikli</a> |
+    <a href="/customers">Stranke</a>
+  </nav>
+
+  <h1>Naročila za dostavo</h1>
+
+  <div id="orders">
+    <div class="orders-header">
+      <h2>Naročila za dostavo (aktivna)</h2>
+      <div class="orders-toggle">
+        <button id="ordersCompact" class="small-btn" aria-label="Skrči pogled">−</button>
+        <button id="ordersExpanded" class="small-btn" aria-label="Razširi pogled">+</button>
+      </div>
+    </div>
+    <div id="ordersList">Nalaganje...</div>
+  </div>
+
+  <!-- Order edit modal -->
+  <div id="orderEditModal" class="modal" aria-hidden="true" style="display:none">
+    <div class="modal-content modal-large" role="dialog" aria-modal="true" aria-labelledby="orderEditTitle">
+      <div class="modal-header">
+        <h3 id="orderEditTitle">Uredi naročilo</h3>
+      </div>
+      <div class="modal-body">
+        <div><strong>Št. naročila:</strong> <span id="edit-orderNum"></span></div>
+        <input id="edit-name" placeholder="Ime in priimek" />
+        <input id="edit-email" placeholder="E-pošta" />
+        <input id="edit-phone" placeholder="Telefon" />
+        <input id="edit-address" placeholder="Naslov" />
+        <input id="edit-service" placeholder="Storitev" />
+        <label for="edit-pickupMode">Način prevzema:</label>
+        <select id="edit-pickupMode">
+          <option value="personal">Osebni prevzem</option>
+          <option value="delivery">Dostava</option>
+        </select>
+        <label for="edit-status">Status:</label>
+        <select id="edit-status">
+          <option value="Naročeno">Naročeno</option>
+          <option value="Sprejeto">Sprejeto</option>
+          <option value="V delu">V delu</option>
+          <option value="Končano">Končano</option>
+          <option value="Oddano">Oddano</option>
+        </select>
+        <div><strong>Pozicije naročila:</strong></div>
+        <div id="edit-items"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="edit-cancel" class="small-btn">Prekliči</button>
+        <button id="edit-save" class="small-btn">Shrani</button>
+        <button id="edit-delete" class="small-btn">Izbriši</button>
+        <button id="edit-pdf" class="small-btn">PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item edit modal -->
+  <div id="itemEditModal" class="modal" aria-hidden="true" style="display:none">
+    <div class="modal-content" role="dialog" aria-modal="true">
+      <div class="modal-header"><h3>Uredi pozicijo</h3></div>
+      <div class="modal-body">
+        <div><strong>Artikel:</strong> <span id="item-name"></span></div>
+        <label for="item-qty">Količina:</label>
+        <input id="item-qty" type="number" step="0.1" min="0" />
+      </div>
+      <div class="modal-actions">
+        <button id="item-cancel" class="small-btn">Prekliči</button>
+        <button id="item-save" class="small-btn">Shrani</button>
+        <button id="item-delete" class="small-btn">Izbriši</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (confirm('Ali se želite odjaviti?')) {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/login';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -22,6 +22,11 @@ app.get('/completed', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'completed.html'));
 });
 
+// Serve delivery page
+app.get('/delivery', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'delivery.html'));
+});
+
 // Serve customers management page
 app.get('/customers', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'customers.html'));
@@ -286,6 +291,19 @@ app.get("/api/completed", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch completed orders" });
+  }
+});
+
+app.get("/api/delivery", async (req, res) => {
+  try {
+    const orders = await Order.find({
+      pickupMode: "delivery",
+      status: {$ne: "Oddano"}
+    }).sort({ createdAt: -1 }).lean();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch delivery orders" });
   }
 });
 
