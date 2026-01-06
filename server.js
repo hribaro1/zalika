@@ -274,6 +274,17 @@ app.get("/orders", async (req, res) => {
   }
 });
 
+app.get("/order/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).lean();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
+
 app.get("/api/archive", async (req, res) => {
   try {
     const orders = await Order.find({status: "Oddano"}).sort({ createdAt: -1 }).lean();

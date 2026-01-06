@@ -28,9 +28,13 @@ socket.on('orderCreated', (order) => {
 socket.on('orderUpdated', (order) => {
   console.log('orderUpdated', order);
   const isPending = pendingOrderScrollId === order._id;
-  const scrollId = isPending ? pendingOrderScrollId : null;
-  if (isPending) pendingOrderScrollId = null;
-  loadOrders(true, scrollId);
+  if (isPending) {
+    pendingOrderScrollId = null;
+    // Refresh only this order to avoid full page reload
+    refreshSingleOrder(order._id);
+  } else {
+    loadOrders(true, null);
+  }
 });
 socket.on('orderDeleted', (data) => {
   console.log('orderDeleted', data);
@@ -340,6 +344,40 @@ async function addItemToOrder(orderId, orderEl) {
   } catch (err) {
     console.error(err);
     alert('Napaka pri dodajanju pozicije. Preverite konzolo.');
+  }
+}
+
+async function refreshSingleOrder(orderId) {
+  try {
+    // Fetch only this order
+    const res = await fetch(`/order/${orderId}`);
+    if (!res.ok) throw new Error('Failed to fetch order');
+    const order = await res.json();
+    
+    // Find the existing div
+    const existingDiv = document.getElementById('order-' + orderId);
+    if (!existingDiv) {
+      // If div doesn't exist, do full refresh
+      loadOrders(true, orderId);
+      return;
+    }
+    
+    // Get parent list
+    const list = existingDiv.parentElement;
+    
+    // Create new order div
+    const tempContainer = document.createElement('div');
+    renderOrdersGroup([order], tempContainer);
+    const newDiv = tempContainer.firstChild;
+    
+    // Replace old div with new div
+    if (newDiv) {
+      list.replaceChild(newDiv, existingDiv);
+    }
+  } catch (err) {
+    console.error('Failed to refresh single order:', err);
+    // Fallback to full refresh
+    loadOrders(true, orderId);
   }
 }
 
