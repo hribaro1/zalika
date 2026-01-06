@@ -37,7 +37,8 @@ function renderArticles(articles) {
     el.id = 'art-' + a._id;
     el.style.cursor = 'pointer';
     const textDiv = document.createElement('div');
-    textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} €</div>`;
+    const usageCount = a.usageCount || 0;
+    textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} € • Števec: ${usageCount}</div>`;
     el.appendChild(textDiv);
     el.addEventListener('click', () => openEdit(a));
     list.appendChild(el);

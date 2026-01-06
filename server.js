@@ -110,7 +110,8 @@ const ArticleSchema = new mongoose.Schema({
   unit: { type: String, required: true },
   price: { type: Number, required: true, min: 0 },
   vatPercent: { type: Number, required: true, min: 0 },
-  finalPrice: { type: Number, required: true, min: 0 }
+  finalPrice: { type: Number, required: true, min: 0 },
+  usageCount: { type: Number, default: 0, min: 0 }
 }, { timestamps: true });
 
 ArticleSchema.pre('validate', function() {
@@ -289,6 +290,8 @@ app.put("/order/:id", async (req, res) => {
 
     if (Array.isArray(updates.items)) {
       const resolvedItems = [];
+      const articlesToIncrement = new Set(); // Track which articles to increment
+      
       for (const it of updates.items) {
         if (!it.articleId) continue;
         const art = await Article.findById(it.articleId).lean();
@@ -306,7 +309,34 @@ app.put("/order/:id", async (req, res) => {
           quantity: qty,
           lineTotal
         });
+        
+        // Increment usage count if quantity is not 0
+        if (qty !== 0) {
+          articlesToIncrement.add(art._id.toString());
+        }
       }
+      
+      // Get the order to compare with previous items
+      const order = await Order.findById(req.params.id);
+      if (!order) return res.status(404).json({ error: "Order not found" });
+      
+      // Find articles that are new (not in previous items with non-zero quantity)
+      const previousArticleIds = new Set();
+      if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+          if (item.quantity !== 0 && item.articleId) {
+            previousArticleIds.add(item.articleId.toString());
+          }
+        });
+      }
+      
+      // Increment usage count only for new articles
+      for (const articleId of articlesToIncrement) {
+        if (!previousArticleIds.has(articleId)) {
+          await Article.findByIdAndUpdate(articleId, { $inc: { usageCount: 1 } });
+        }
+      }
+      
       updates.items = resolvedItems;
     }
 
