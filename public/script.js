@@ -851,6 +851,7 @@ async function order() {
   const email = customer.email || '';
   const phone = customer.phone || '';
   const address = customer.address || '';
+  const customerNotes = customer.notes || '';
   const service = document.getElementById('service').value;
   const pickupModeSel = document.getElementById('pickupMode');
   const pickupMode = pickupModeSel ? pickupModeSel.value : 'personal';
@@ -860,7 +861,7 @@ async function order() {
   try {
     const res = await fetch('/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customerId: customer._id, name, email, phone, address, service, pickupMode, paymentMethod, customerType })
+      body: JSON.stringify({ customerId: customer._id, name, email, phone, address, service, pickupMode, paymentMethod, customerType, customerNotes })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     
