@@ -603,7 +603,7 @@ function renderOrdersGroup(orders, list) {
         <div class="meta">Status: <span id="status-${o._id}">${escapeHtml(o.status || 'Naročeno')}</span></div>
         <div class="meta">Način plačila: ${paymentLabel(o.paymentMethod)}</div>
         <div class="meta">Tip stranke: ${customerTypeLabel(o.customerType)}</div>
-        ${o.customerNotes ? `<div class="meta">Opombe stranke: ${escapeHtml(o.customerNotes)}</div>` : ''}
+        ${o.orderNotes ? `<div class="meta">Opombe naročila: ${escapeHtml(o.orderNotes)}</div>` : ''}
       `;
 
       // append items container and add form
@@ -717,10 +717,9 @@ function openEditModal(order) {
   if (paySel) paySel.value = order.paymentMethod || 'cash';
   const typeSel = document.getElementById('edit-customer-type');
   if (typeSel) typeSel.value = order.customerType || 'physical';
-  const notesSel = document.getElementById('edit-customer-notes');
-  if (notesSel) notesSel.value = order.customerNotes || '';
+  const notesSel = document.getElementById('edit-order-notes');
+  if (notesSel) notesSel.value = order.orderNotes || '';
   modal.dataset.editingId = order._id;
-  modal.dataset.customerId = order.customerId || '';
   document.getElementById('edit-name').focus();
 }
 
@@ -740,30 +739,16 @@ async function saveEdit() {
   const status = document.getElementById('edit-status').value;
   const paymentMethod = document.getElementById('edit-payment') ? document.getElementById('edit-payment').value : 'cash';
   const customerType = document.getElementById('edit-customer-type') ? document.getElementById('edit-customer-type').value : 'physical';
-  const customerNotes = document.getElementById('edit-customer-notes') ? document.getElementById('edit-customer-notes').value.trim() : '';
-  const customerId = modal.dataset.customerId;
+  const orderNotes = document.getElementById('edit-order-notes') ? document.getElementById('edit-order-notes').value.trim() : '';
 
   if (!name) { alert('Ime mora biti izpolnjeno.'); return; }
 
   try {
-    // Update order
     const res = await fetch(`/order/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, service, pickupMode, status, paymentMethod, customerType, customerNotes })
+      body: JSON.stringify({ name, service, pickupMode, status, paymentMethod, customerType, orderNotes })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
-    
-    // Update customer notes if customerId exists
-    if (customerId) {
-      const custRes = await fetch(`/api/customers/${customerId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: customerNotes })
-      });
-      if (!custRes.ok) {
-        console.warn('Failed to update customer notes');
-      }
-    }
-    
     closeEditModal();
     // server will broadcast; loadOrders() will run on other clients via socket, here refresh to be immediate
     loadOrders();
@@ -851,7 +836,6 @@ async function order() {
   const email = customer.email || '';
   const phone = customer.phone || '';
   const address = customer.address || '';
-  const customerNotes = customer.notes || '';
   const service = document.getElementById('service').value;
   const pickupModeSel = document.getElementById('pickupMode');
   const pickupMode = pickupModeSel ? pickupModeSel.value : 'personal';
@@ -861,7 +845,7 @@ async function order() {
   try {
     const res = await fetch('/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customerId: customer._id, name, email, phone, address, service, pickupMode, paymentMethod, customerType, customerNotes })
+      body: JSON.stringify({ customerId: customer._id, name, email, phone, address, service, pickupMode, paymentMethod, customerType })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     

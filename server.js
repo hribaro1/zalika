@@ -76,7 +76,7 @@ const OrderSchema = new mongoose.Schema({
     trim: true
   },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
-  customerNotes: String,
+  orderNotes: { type: String, default: '' },
   pickupMode: { type: String, enum: ['personal', 'delivery'], default: 'personal' },
   paymentMethod: { type: String, enum: ['cash', 'invoice'], default: 'cash' },
   customerType: { type: String, enum: ['physical', 'company'], default: 'physical' },
@@ -268,15 +268,6 @@ app.post("/order", async (req, res) => {
 app.get("/orders", async (req, res) => {
   try {
     const orders = await Order.find({status: {$nin: ["Oddano", "Končano"]}}).sort({ createdAt: -1 }).lean();
-    // Populate customerNotes from Customer if not set
-    for (const order of orders) {
-      if (order.customerId && !order.customerNotes) {
-        const customer = await Customer.findById(order.customerId).lean();
-        if (customer && customer.notes) {
-          order.customerNotes = customer.notes;
-        }
-      }
-    }
     res.json(orders);
   } catch (err) {
     console.error(err);
@@ -288,13 +279,6 @@ app.get("/order/:id", async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).lean();
     if (!order) return res.status(404).json({ error: "Order not found" });
-    // Populate customerNotes from Customer if not set
-    if (order.customerId && !order.customerNotes) {
-      const customer = await Customer.findById(order.customerId).lean();
-      if (customer && customer.notes) {
-        order.customerNotes = customer.notes;
-      }
-    }
     res.json(order);
   } catch (err) {
     console.error(err);
@@ -305,15 +289,6 @@ app.get("/order/:id", async (req, res) => {
 app.get("/api/archive", async (req, res) => {
   try {
     const orders = await Order.find({status: "Oddano"}).sort({ createdAt: -1 }).lean();
-    // Populate customerNotes from Customer if not set
-    for (const order of orders) {
-      if (order.customerId && !order.customerNotes) {
-        const customer = await Customer.findById(order.customerId).lean();
-        if (customer && customer.notes) {
-          order.customerNotes = customer.notes;
-        }
-      }
-    }
     res.json(orders);
   } catch (err) {
     console.error(err);
@@ -324,15 +299,6 @@ app.get("/api/archive", async (req, res) => {
 app.get("/api/completed", async (req, res) => {
   try {
     const orders = await Order.find({status: {$in: ["Končano", "Oddano"]}}).sort({ createdAt: -1 }).lean();
-    // Populate customerNotes from Customer if not set
-    for (const order of orders) {
-      if (order.customerId && !order.customerNotes) {
-        const customer = await Customer.findById(order.customerId).lean();
-        if (customer && customer.notes) {
-          order.customerNotes = customer.notes;
-        }
-      }
-    }
     res.json(orders);
   } catch (err) {
     console.error(err);
@@ -346,15 +312,6 @@ app.get("/api/delivery", async (req, res) => {
       pickupMode: "delivery",
       status: {$ne: "Oddano"}
     }).sort({ createdAt: -1 }).lean();
-    // Populate customerNotes from Customer if not set
-    for (const order of orders) {
-      if (order.customerId && !order.customerNotes) {
-        const customer = await Customer.findById(order.customerId).lean();
-        if (customer && customer.notes) {
-          order.customerNotes = customer.notes;
-        }
-      }
-    }
     res.json(orders);
   } catch (err) {
     console.error(err);
@@ -429,7 +386,7 @@ app.put("/order/:id", async (req, res) => {
       order.statusHistory = [{ status: order.status, timestamp: order.createdAt }];
     }
 
-    const allowed = ['name','service','address','email','phone','status','items','paymentMethod','customerType','pickupMode','customerNotes'];
+    const allowed = ['name','service','address','email','phone','status','items','paymentMethod','customerType','pickupMode','orderNotes'];
     allowed.forEach(k => { if (typeof updates[k] !== 'undefined') order[k] = updates[k]; });
 
     if (updates.status && updates.status !== order.status) {
