@@ -1,0 +1,20 @@
+[Unit]
+Description=ESC/POS Print Server za trgovino
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/raspberry-pi-print-server
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node print-server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

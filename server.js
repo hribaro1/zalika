@@ -139,9 +139,65 @@ ArticleSchema.pre('validate', function() {
 
 const Article = mongoose.model('Article', ArticleSchema);
 
+// Track connected print clients (Raspberry Pi)
+const printClients = new Map();
+
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
-  socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
+  
+  // Register print client (Raspberry Pi)
+  socket.on('registerPrintClient', (data) => {
+    printClients.set(socket.id, { socket, name: data.name || 'Unknown', timestamp: new Date() });
+    console.log(`Print client registered: ${socket.id} (${data.name})`);
+    socket.emit('printClientRegistered', { success: true, clientId: socket.id });
+  });
+  
+  // Handle print request from web client
+  socket.on('printOrder', async (data) => {
+    console.log('Print request received for order:', data.orderId);
+    
+    try {
+      // Get full order data from database
+      const order = await Order.findById(data.orderId).lean();
+      if (!order) {
+        socket.emit('printError', { error: 'Order not found' });
+        return;
+      }
+      
+      // Send to all registered print clients
+      let sent = false;
+      for (const [clientId, client] of printClients.entries()) {
+        client.socket.emit('print', { order });
+        sent = true;
+        console.log(`Print job sent to client: ${clientId}`);
+      }
+      
+      if (sent) {
+        socket.emit('printSuccess', { message: 'Poslano na tiskalnik' });
+      } else {
+        socket.emit('printError', { error: 'Ni povezanih tiskalnikov' });
+      }
+    } catch (err) {
+      console.error('Print error:', err);
+      socket.emit('printError', { error: 'Napaka pri pripravi podatkov' });
+    }
+  });
+  
+  // Handle print confirmation from print client
+  socket.on('printComplete', (data) => {
+    console.log('Print completed:', data);
+    io.emit('printNotification', { message: 'Naročilo natisnjeno', orderId: data.orderId });
+  });
+  
+  socket.on('disconnect', () => {
+    if (printClients.has(socket.id)) {
+      const client = printClients.get(socket.id);
+      console.log(`Print client disconnected: ${socket.id} (${client.name})`);
+      printClients.delete(socket.id);
+    } else {
+      console.log('Socket disconnected:', socket.id);
+    }
+  });
 });
 
 // Customers API

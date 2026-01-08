@@ -15,8 +15,6 @@ const PICKUP_OPTIONS = [
 // When an order update originates locally, remember which order to keep in view after socket refresh
 let pendingOrderScrollId = null;
 
-const { jsPDF } = window.jspdf;
-
 /* --- socket.io client --- */
 const socket = io();
 socket.on('connect', () => console.log('socket connected', socket.id));
@@ -39,6 +37,17 @@ socket.on('orderUpdated', (order) => {
 socket.on('orderDeleted', (data) => {
   console.log('orderDeleted', data);
   loadOrders();
+});
+
+// Print notifications
+socket.on('printSuccess', (data) => {
+  alert(data.message);
+});
+socket.on('printError', (data) => {
+  alert('Napaka pri tiskanju: ' + data.error);
+});
+socket.on('printNotification', (data) => {
+  console.log('Print notification:', data);
 });
 
 /* --- helper functions (same as before) --- */
@@ -91,49 +100,10 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
-function generateOrderPDF(order) {
-  const doc = new jsPDF();
-  doc.setFont('arial', 'normal');
-  doc.setFontSize(9);
-  let y = 10;
-  doc.text(`St. narocila: ${order.orderNumber || ''}`, 10, y);
-  y += 6;
-  doc.text(`Ime: ${order.name}`, 10, y);
-  y += 6;
-  doc.text(`E-posta: ${order.email}`, 10, y);
-  y += 6;
-  doc.text(`Telefon: ${order.phone}`, 10, y);
-  y += 6;
-  doc.text(`Naslov: ${order.address}`, 10, y);
-  y += 6;
-  doc.text(`Storitev: ${order.service}`, 10, y);
-  y += 6;
-  doc.text(`Status: ${order.status}`, 10, y);
-  y += 6;
-  doc.text(`Datum: ${order.createdAt ? formatDateISO(order.createdAt) : ''}`, 10, y);
-  y += 8;
-  if (order.items && order.items.length) {
-    doc.text('Pozicije:', 10, y);
-    y += 6;
-    let total = 0;
-    order.items.forEach(item => {
-      doc.text(`${item.name} - ${item.quantity} x ${item.finalPrice} € = ${item.lineTotal} €`, 10, y);
-      total += item.lineTotal || 0;
-      y += 6;
-    });
-    y += 6;
-    doc.text(`Skupni znesek: ${total.toFixed(2)} €`, 10, y);
-    y += 10;
-  }
-  if (order.statusHistory && order.statusHistory.length) {
-    doc.text('Zgodovina statusa:', 10, y);
-    y += 6;
-    order.statusHistory.forEach(h => {
-      doc.text(`${h.status} - ${formatDateISO(h.timestamp)}`, 10, y);
-      y += 6;
-    });
-  }
-  doc.save(`narocilo-${order._id}.pdf`);
+function sendToPOSPrinter(order) {
+  // Send print request via WebSocket to server, which forwards to Raspberry Pi print client
+  socket.emit('printOrder', { orderId: order._id });
+  console.log('Print request sent for order:', order._id);
 }
 
 /* --- main UI functions (unchanged behavior, but kept here for completeness) --- */
@@ -589,7 +559,7 @@ function renderOrdersGroup(orders, list) {
 
       const printBtn = document.createElement('button');
       printBtn.textContent = 'Izpis naročila'; printBtn.className = 'small-btn';
-      printBtn.addEventListener('click', () => generateOrderPDF(o));
+      printBtn.addEventListener('click', () => sendToPOSPrinter(o));
 
       // Apply light gray background for Oddano orders in completed section
       if (o.status === 'Oddano' && window.location.pathname === '/completed') {
