@@ -558,7 +558,7 @@ function renderOrdersGroup(orders, list) {
       editBtn.addEventListener('click', () => openEditModal(o));
 
       const printBtn = document.createElement('button');
-      printBtn.textContent = 'Izpis naročila'; printBtn.className = 'small-btn';
+      printBtn.textContent = 'Primož'; printBtn.className = 'small-btn';
       printBtn.addEventListener('click', () => sendToPOSPrinter(o));
 
       // Apply light gray background for Oddano orders in completed section
