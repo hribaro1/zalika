@@ -442,14 +442,79 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
             
             const dateHeader = document.createElement('div');
             dateHeader.className = 'date-group-header';
+            dateHeader.style.display = 'flex';
+            dateHeader.style.justifyContent = 'space-between';
+            dateHeader.style.alignItems = 'center';
+            dateHeader.style.padding = '12px';
+            
             const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
               ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
               : dateOrders[0].createdAt;
-            dateHeader.innerHTML = `
-              <strong>${formatDateOnly(displayDate)}</strong>
-              <span class="date-total">Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
-            `;
+            
+            const leftSide = document.createElement('div');
+            leftSide.innerHTML = `<strong>${formatDateOnly(displayDate)}</strong>`;
+            
+            const centerSide = document.createElement('div');
+            centerSide.className = 'date-total';
+            centerSide.innerHTML = `Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €`;
+            
+            const rightSide = document.createElement('div');
+            rightSide.style.display = 'flex';
+            rightSide.style.alignItems = 'center';
+            rightSide.style.gap = '8px';
+            
+            const kmLabel = document.createElement('label');
+            kmLabel.textContent = 'Kilometri: ';
+            kmLabel.style.fontWeight = 'normal';
+            
+            const kmInput = document.createElement('input');
+            kmInput.type = 'number';
+            kmInput.min = '0';
+            kmInput.step = '0.1';
+            kmInput.placeholder = 'km';
+            kmInput.style.width = '80px';
+            kmInput.style.padding = '4px';
+            kmInput.className = 'delivery-km-input';
+            kmInput.dataset.date = dateKey;
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Shrani';
+            saveBtn.className = 'small-btn';
+            saveBtn.addEventListener('click', async () => {
+              const km = parseFloat(kmInput.value) || 0;
+              const orderIds = dateOrders.map(o => o._id);
+              
+              try {
+                const res = await fetch('/api/delivery-day', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ date: dateKey, kilometers: km, minutes: 0, orderIds })
+                });
+                if (!res.ok) throw new Error('Failed to save');
+                alert('Kilometri shranjeni');
+              } catch (err) {
+                console.error(err);
+                alert('Napaka pri shranjevanju');
+              }
+            });
+            
+            rightSide.appendChild(kmLabel);
+            rightSide.appendChild(kmInput);
+            rightSide.appendChild(saveBtn);
+            
+            dateHeader.appendChild(leftSide);
+            dateHeader.appendChild(centerSide);
+            dateHeader.appendChild(rightSide);
+            
             deliveredList.appendChild(dateHeader);
+            
+            // Load existing delivery day data
+            fetch(`/api/delivery-day/${dateKey}`)
+              .then(res => res.json())
+              .then(data => {
+                kmInput.value = data.kilometers || '';
+              })
+              .catch(err => console.error('Failed to load delivery day data:', err));
 
             renderOrdersGroup(dateOrders, deliveredList);
           }
