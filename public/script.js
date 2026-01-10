@@ -247,7 +247,7 @@ function createArticleSelect(selectedId) {
   return container;
 }
 
-function renderOrderItems(container, items, orderId) {
+function renderOrderItems(container, items, orderId, allowEdit = true) {
   container.innerHTML = '';
   if (!items || !items.length) {
     container.innerHTML = '<i>Ni pozicij.</i>';
@@ -258,14 +258,18 @@ function renderOrderItems(container, items, orderId) {
   items.forEach((it, index) => {
     const row = document.createElement('div');
     row.className = 'order-item';
-    row.style.cursor = 'pointer';
-    row.title = 'Kliknite za urejanje pozicije';
+    if (allowEdit) {
+      row.style.cursor = 'pointer';
+      row.title = 'Kliknite za urejanje pozicije';
+    }
     const qty = typeof it.quantity === 'number' ? it.quantity : 1;
     const qtyDisplay = Number(qty) % 1 === 0 ? qty : Number(qty).toFixed(1);
     const name = it.name || '(artikel)';
     const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
     row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qtyDisplay} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
-    row.addEventListener('click', () => openEditItemModal(orderId, index, it));
+    if (allowEdit) {
+      row.addEventListener('click', () => openEditItemModal(orderId, index, it));
+    }
     ul.appendChild(row);
   });
   container.appendChild(ul);
@@ -485,8 +489,11 @@ function renderOrdersGroup(orders, list) {
       itemsContainer.className = 'items-container';
       div.dataset.items = JSON.stringify(currentItems);
 
-      // Render existing items
-      renderOrderItems(itemsContainer, currentItems, o._id);
+      // Check if we're in delivery view - disable editing
+      const isDeliveryView = window.location.pathname === '/delivery';
+
+      // Render existing items (disable editing in delivery view)
+      renderOrderItems(itemsContainer, currentItems, o._id, !isDeliveryView);
 
       // Calculate and display total
       const total = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
@@ -512,35 +519,38 @@ function renderOrdersGroup(orders, list) {
         historyDiv.appendChild(ul);
       }
 
-      // Add item form
-      const addWrap = document.createElement('div');
-      addWrap.className = 'add-item-wrap';
+      // Add item form (only if not in delivery view)
+      let addWrap = null;
+      if (!isDeliveryView) {
+        addWrap = document.createElement('div');
+        addWrap.className = 'add-item-wrap';
 
-      // ✅ Prevent entire add-item section from triggering parent click
-      addWrap.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
+        // ✅ Prevent entire add-item section from triggering parent click
+        addWrap.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
 
-      const articleSel = createArticleSelect();
-      articleSel.style.marginTop = '8px';
-      articleSel.style.marginRight = '12px';
-      const qtyIn = document.createElement('input');
-      qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
-      qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
+        const articleSel = createArticleSelect();
+        articleSel.style.marginTop = '8px';
+        articleSel.style.marginRight = '12px';
+        const qtyIn = document.createElement('input');
+        qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
+        qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
 
-      // ✅ Prevent quantity input clicks from propagating
-      qtyIn.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
+        // ✅ Prevent quantity input clicks from propagating
+        qtyIn.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
 
-      const addBtn = document.createElement('button');
-      addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
-      addBtn.style.marginLeft = '8px';
-      addBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        addItemToOrder(o._id, div);
-      });
-      addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
+        const addBtn = document.createElement('button');
+        addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
+        addBtn.style.marginLeft = '8px';
+        addBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          addItemToOrder(o._id, div);
+        });
+        addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
+      }
 
       const statusSelect = document.createElement('select');
       statusSelect.className = 'status-select';
@@ -558,7 +568,7 @@ function renderOrdersGroup(orders, list) {
       editBtn.addEventListener('click', () => openEditModal(o));
 
       const printBtn = document.createElement('button');
-      printBtn.textContent = 'Izpis'; printBtn.className = 'small-btn';
+      printBtn.textContent = 'Natisni'; printBtn.className = 'small-btn';
       printBtn.addEventListener('click', () => sendToPOSPrinter(o));
 
       // Apply light gray background for Oddano orders in completed section
@@ -578,23 +588,138 @@ function renderOrdersGroup(orders, list) {
 
       // append items container and add form
       div.appendChild(itemsContainer);
-      if (window.location.pathname !== '/archive' && window.location.pathname !== '/completed') div.appendChild(addWrap);
-
-      const statusControl = document.createElement('div');
-      statusControl.style.marginTop = '8px';
-      statusControl.style.display = 'flex';
-      statusControl.style.gap = '8px';
-      statusControl.style.alignItems = 'center';
-      statusControl.style.justifyContent = 'flex-start';
-      statusControl.appendChild(statusSelect);
-      div.appendChild(statusControl);
-
-      const controls = document.createElement('div');
-      if (window.location.pathname !== '/archive' && window.location.pathname !== '/completed') {
-        controls.appendChild(editBtn);
+      if (addWrap && window.location.pathname !== '/archive' && window.location.pathname !== '/completed') {
+        div.appendChild(addWrap);
       }
-      controls.appendChild(printBtn);
-      div.appendChild(controls);
+
+      // For delivery view, create simplified controls
+      if (isDeliveryView) {
+        const deliveryControls = document.createElement('div');
+        deliveryControls.style.marginTop = '12px';
+        deliveryControls.style.padding = '12px';
+        deliveryControls.style.backgroundColor = '#f9f9f9';
+        deliveryControls.style.borderRadius = '4px';
+
+        // Status select
+        const statusLabel = document.createElement('label');
+        statusLabel.textContent = 'Status: ';
+        statusLabel.style.fontWeight = 'bold';
+        statusLabel.style.marginRight = '8px';
+        
+        const statusRow = document.createElement('div');
+        statusRow.style.marginBottom = '12px';
+        statusRow.appendChild(statusLabel);
+        statusRow.appendChild(statusSelect);
+        deliveryControls.appendChild(statusRow);
+
+        // Payment method select
+        const paymentLabel = document.createElement('label');
+        paymentLabel.textContent = 'Način plačila: ';
+        paymentLabel.style.fontWeight = 'bold';
+        paymentLabel.style.marginRight = '8px';
+        
+        const paymentSelect = document.createElement('select');
+        paymentSelect.className = 'payment-select';
+        paymentSelect.style.marginBottom = '8px';
+        PAYMENT_OPTIONS.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.value;
+          opt.textContent = p.label;
+          if (o.paymentMethod === p.value) opt.selected = true;
+          paymentSelect.appendChild(opt);
+        });
+        
+        paymentSelect.addEventListener('change', async () => {
+          try {
+            const res = await fetch(`/order/${o._id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentMethod: paymentSelect.value })
+            });
+            if (!res.ok) throw new Error('Failed to update payment method');
+            alert('Način plačila posodobljen');
+          } catch (err) {
+            console.error(err);
+            alert('Napaka pri posodabljanju načina plačila');
+          }
+        });
+
+        const paymentRow = document.createElement('div');
+        paymentRow.style.marginBottom = '12px';
+        paymentRow.appendChild(paymentLabel);
+        paymentRow.appendChild(paymentSelect);
+        deliveryControls.appendChild(paymentRow);
+
+        // Order notes textarea
+        const notesLabel = document.createElement('label');
+        notesLabel.textContent = 'Opombe: ';
+        notesLabel.style.fontWeight = 'bold';
+        notesLabel.style.display = 'block';
+        notesLabel.style.marginBottom = '4px';
+
+        const notesTextarea = document.createElement('textarea');
+        notesTextarea.className = 'order-notes-textarea';
+        notesTextarea.value = o.orderNotes || '';
+        notesTextarea.placeholder = 'Vnesite opombe...';
+        notesTextarea.style.width = '100%';
+        notesTextarea.style.minHeight = '60px';
+        notesTextarea.style.marginBottom = '8px';
+        notesTextarea.style.padding = '8px';
+        notesTextarea.style.borderRadius = '4px';
+        notesTextarea.style.border = '1px solid #ccc';
+        notesTextarea.style.fontFamily = 'inherit';
+        notesTextarea.style.fontSize = '14px';
+
+        const saveNotesBtn = document.createElement('button');
+        saveNotesBtn.textContent = 'Shrani opombe';
+        saveNotesBtn.className = 'small-btn';
+        saveNotesBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          try {
+            const res = await fetch(`/order/${o._id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderNotes: notesTextarea.value })
+            });
+            if (!res.ok) throw new Error('Failed to update notes');
+            alert('Opombe shranjene');
+          } catch (err) {
+            console.error(err);
+            alert('Napaka pri shranjevanju opomb');
+          }
+        });
+
+        const notesRow = document.createElement('div');
+        notesRow.appendChild(notesLabel);
+        notesRow.appendChild(notesTextarea);
+        notesRow.appendChild(saveNotesBtn);
+        deliveryControls.appendChild(notesRow);
+
+        div.appendChild(deliveryControls);
+
+        // Print button
+        const printRow = document.createElement('div');
+        printRow.style.marginTop = '8px';
+        printRow.appendChild(printBtn);
+        div.appendChild(printRow);
+      } else {
+        // Standard controls for other views
+        const statusControl = document.createElement('div');
+        statusControl.style.marginTop = '8px';
+        statusControl.style.display = 'flex';
+        statusControl.style.gap = '8px';
+        statusControl.style.alignItems = 'center';
+        statusControl.style.justifyContent = 'flex-start';
+        statusControl.appendChild(statusSelect);
+        div.appendChild(statusControl);
+
+        const controls = document.createElement('div');
+        if (window.location.pathname !== '/archive' && window.location.pathname !== '/completed') {
+          controls.appendChild(editBtn);
+        }
+        controls.appendChild(printBtn);
+        div.appendChild(controls);
+      }
 
       if (historyDiv) div.appendChild(historyDiv);
 
@@ -606,6 +731,7 @@ function renderOrdersGroup(orders, list) {
           e.target.tagName === 'BUTTON' ||
           e.target.tagName === 'SELECT' ||
           e.target.tagName === 'INPUT' ||
+          e.target.tagName === 'TEXTAREA' ||
           e.target.classList.contains('article-input') ||
           e.target.classList.contains('article-suggestion') ||
           e.target.closest('.article-select-container') ||
@@ -614,7 +740,8 @@ function renderOrdersGroup(orders, list) {
           e.target.closest('.items-container') ||
           e.target.closest('.status-select') ||
           e.target.classList.contains('small-btn') ||
-          e.target.closest('.order-item');
+          e.target.closest('.order-item') ||
+          e.target.closest('.order-notes-textarea');
         
         if (!clickedInteractive) {
           expandedOrders.delete(o._id);
