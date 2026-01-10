@@ -364,9 +364,9 @@ app.get("/api/completed", async (req, res) => {
 
 app.get("/api/delivery", async (req, res) => {
   try {
+    // Return all delivery orders, including completed ones
     const orders = await Order.find({
-      pickupMode: "delivery",
-      status: {$ne: "Oddano"}
+      pickupMode: "delivery"
     }).sort({ createdAt: -1 }).lean();
     res.json(orders);
   } catch (err) {

@@ -384,8 +384,69 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     list.innerHTML = '';
 
     const isGroupedView = window.location.pathname === '/completed' || window.location.pathname === '/archive';
+    const isDeliveryView = window.location.pathname === '/delivery';
 
-    if (isGroupedView) {
+    if (isDeliveryView) {
+      // Split delivery orders into active and delivered
+      const activeOrders = orders.filter(o => o.status !== 'Oddano');
+      const deliveredOrders = orders.filter(o => o.status === 'Oddano');
+
+      // Render active orders
+      if (activeOrders.length > 0) {
+        renderOrdersGroup(activeOrders, list);
+      } else {
+        list.innerHTML = '<i>Ni aktivnih naročil za dostavo.</i>';
+      }
+
+      // Render delivered orders grouped by date
+      const deliveredList = document.getElementById('deliveredOrdersList');
+      if (deliveredList) {
+        deliveredList.innerHTML = '';
+        
+        if (deliveredOrders.length > 0) {
+          // Group by date
+          const ordersByDate = {};
+          deliveredOrders.forEach(o => {
+            let statusDate = o.createdAt;
+            if (o.statusHistory && o.statusHistory.length > 0) {
+              const statusEntry = o.statusHistory.slice().reverse().find(h => h.status === 'Oddano');
+              if (statusEntry && statusEntry.timestamp) {
+                statusDate = statusEntry.timestamp;
+              }
+            }
+            const dateKey = getDateKey(statusDate);
+            if (!ordersByDate[dateKey]) {
+              ordersByDate[dateKey] = [];
+            }
+            ordersByDate[dateKey].push(o);
+          });
+
+          // Render each date group
+          Object.keys(ordersByDate).sort().reverse().forEach(dateKey => {
+            const dateOrders = ordersByDate[dateKey];
+            const dateTotal = dateOrders.reduce((sum, o) => {
+              const items = o.items || [];
+              return sum + items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+            }, 0);
+            
+            const dateHeader = document.createElement('div');
+            dateHeader.className = 'date-group-header';
+            const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
+              ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
+              : dateOrders[0].createdAt;
+            dateHeader.innerHTML = `
+              <strong>${formatDateOnly(displayDate)}</strong>
+              <span class="date-total">${dateTotal > 0 ? 'Dnevni znesek: ' + dateTotal.toFixed(2) + ' €' : ''}</span>
+            `;
+            deliveredList.appendChild(dateHeader);
+
+            renderOrdersGroup(dateOrders, deliveredList);
+          });
+        } else {
+          deliveredList.innerHTML = '<i>Ni še oddanih naročil.</i>';
+        }
+      }
+    } else if (isGroupedView) {
       // Group orders by date when status changed to current status (Končano or Oddano)
       const ordersByDate = {};
       orders.forEach(o => {
