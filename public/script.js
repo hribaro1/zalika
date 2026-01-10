@@ -422,23 +422,122 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           });
 
           // Render each date group
-          Object.keys(ordersByDate).sort().reverse().forEach(dateKey => {
+          Object.keys(ordersByDate).sort().reverse().forEach(async dateKey => {
             const dateOrders = ordersByDate[dateKey];
-            const dateTotal = dateOrders.reduce((sum, o) => {
+            
+            // Calculate totals by payment method
+            let cashTotal = 0;
+            let invoiceTotal = 0;
+            dateOrders.forEach(o => {
               const items = o.items || [];
-              return sum + items.reduce((s, item) => s + (item.lineTotal || 0), 0);
-            }, 0);
+              const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+              if (o.paymentMethod === 'cash') {
+                cashTotal += orderTotal;
+              } else {
+                invoiceTotal += orderTotal;
+              }
+            });
+            const dateTotal = cashTotal + invoiceTotal;
             
             const dateHeader = document.createElement('div');
             dateHeader.className = 'date-group-header';
+            dateHeader.style.display = 'flex';
+            dateHeader.style.flexDirection = 'column';
+            dateHeader.style.gap = '8px';
+            dateHeader.style.padding = '12px';
+            
             const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
               ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
               : dateOrders[0].createdAt;
-            dateHeader.innerHTML = `
+            
+            // Top row with date and totals
+            const topRow = document.createElement('div');
+            topRow.style.display = 'flex';
+            topRow.style.justifyContent = 'space-between';
+            topRow.style.alignItems = 'center';
+            topRow.innerHTML = `
               <strong>${formatDateOnly(displayDate)}</strong>
-              <span class="date-total">${dateTotal > 0 ? 'Dnevni znesek: ' + dateTotal.toFixed(2) + ' €' : ''}</span>
+              <div style="display: flex; gap: 15px;">
+                <span>Gotovina: <strong>${cashTotal.toFixed(2)} €</strong></span>
+                <span>Račun: <strong>${invoiceTotal.toFixed(2)} €</strong></span>
+                <span>Skupaj: <strong>${dateTotal.toFixed(2)} €</strong></span>
+              </div>
             `;
+            dateHeader.appendChild(topRow);
+            
+            // Bottom row with km and minutes inputs
+            const bottomRow = document.createElement('div');
+            bottomRow.style.display = 'flex';
+            bottomRow.style.gap = '15px';
+            bottomRow.style.alignItems = 'center';
+            
+            const kmLabel = document.createElement('label');
+            kmLabel.textContent = 'Kilometri: ';
+            kmLabel.style.fontWeight = 'normal';
+            const kmInput = document.createElement('input');
+            kmInput.type = 'number';
+            kmInput.min = '0';
+            kmInput.step = '0.1';
+            kmInput.placeholder = 'km';
+            kmInput.style.width = '80px';
+            kmInput.style.padding = '4px';
+            kmInput.className = 'delivery-km-input';
+            kmInput.dataset.date = dateKey;
+            
+            const minLabel = document.createElement('label');
+            minLabel.textContent = 'Minute: ';
+            minLabel.style.fontWeight = 'normal';
+            const minInput = document.createElement('input');
+            minInput.type = 'number';
+            minInput.min = '0';
+            minInput.placeholder = 'min';
+            minInput.style.width = '80px';
+            minInput.style.padding = '4px';
+            minInput.className = 'delivery-minutes-input';
+            minInput.dataset.date = dateKey;
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Shrani';
+            saveBtn.className = 'small-btn';
+            saveBtn.addEventListener('click', async () => {
+              const km = parseFloat(kmInput.value) || 0;
+              const minutes = parseInt(minInput.value) || 0;
+              const orderIds = dateOrders.map(o => o._id);
+              
+              try {
+                const res = await fetch('/api/delivery-day', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ date: dateKey, kilometers: km, minutes, orderIds })
+                });
+                if (!res.ok) throw new Error('Failed to save');
+                alert('Podatki shranjeni');
+              } catch (err) {
+                console.error(err);
+                alert('Napaka pri shranjevanju');
+              }
+            });
+            
+            bottomRow.appendChild(kmLabel);
+            bottomRow.appendChild(kmInput);
+            bottomRow.appendChild(minLabel);
+            bottomRow.appendChild(minInput);
+            bottomRow.appendChild(saveBtn);
+            dateHeader.appendChild(bottomRow);
+            
             deliveredList.appendChild(dateHeader);
+            
+            // Load existing delivery day data
+            try {
+              const res = await fetch(`/api/delivery-day/${dateKey}`);
+              if (res.ok) {
+                const data = await res.json();
+                kmInput.value = data.kilometers || '';
+                minInput.value = data.minutes || '';
+              }
+            } catch (err) {
+              console.error('Failed to load delivery day data:', err);
+            }
 
             renderOrdersGroup(dateOrders, deliveredList);
           });

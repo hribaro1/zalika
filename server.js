@@ -139,6 +139,15 @@ ArticleSchema.pre('validate', function() {
 
 const Article = mongoose.model('Article', ArticleSchema);
 
+const DeliveryDaySchema = new mongoose.Schema({
+  date: { type: String, required: true, unique: true }, // YYYY-MM-DD format
+  kilometers: { type: Number, default: 0, min: 0 },
+  minutes: { type: Number, default: 0, min: 0 },
+  orderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }]
+}, { timestamps: true });
+
+const DeliveryDay = mongoose.model('DeliveryDay', DeliveryDaySchema);
+
 // Track connected print clients (Raspberry Pi)
 const printClients = new Map();
 
@@ -495,6 +504,57 @@ app.delete("/order/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to delete order" });
+  }
+});
+
+// DeliveryDay API endpoints
+app.get("/api/delivery-days", async (req, res) => {
+  try {
+    const deliveryDays = await DeliveryDay.find().sort({ date: -1 }).lean();
+    res.json(deliveryDays);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch delivery days" });
+  }
+});
+
+app.get("/api/delivery-day/:date", async (req, res) => {
+  try {
+    const deliveryDay = await DeliveryDay.findOne({ date: req.params.date }).lean();
+    if (!deliveryDay) return res.json({ date: req.params.date, kilometers: 0, minutes: 0, orderIds: [] });
+    res.json(deliveryDay);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch delivery day" });
+  }
+});
+
+app.post("/api/delivery-day", async (req, res) => {
+  try {
+    const { date, kilometers, minutes, orderIds } = req.body;
+    
+    // Find or create delivery day
+    let deliveryDay = await DeliveryDay.findOne({ date });
+    
+    if (deliveryDay) {
+      deliveryDay.kilometers = kilometers;
+      deliveryDay.minutes = minutes;
+      deliveryDay.orderIds = orderIds || [];
+      await deliveryDay.save();
+    } else {
+      deliveryDay = new DeliveryDay({
+        date,
+        kilometers,
+        minutes,
+        orderIds: orderIds || []
+      });
+      await deliveryDay.save();
+    }
+    
+    res.json({ message: "Delivery day saved", deliveryDay });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || "Failed to save delivery day" });
   }
 });
 
