@@ -425,10 +425,20 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           const sortedDates = Object.keys(ordersByDate).sort().reverse();
           for (const dateKey of sortedDates) {
             const dateOrders = ordersByDate[dateKey];
-            const dateTotal = dateOrders.reduce((sum, o) => {
+            
+            // Calculate totals by payment method
+            let cashTotal = 0;
+            let invoiceTotal = 0;
+            dateOrders.forEach(o => {
               const items = o.items || [];
-              return sum + items.reduce((s, item) => s + (item.lineTotal || 0), 0);
-            }, 0);
+              const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+              if (o.paymentMethod === 'cash') {
+                cashTotal += orderTotal;
+              } else {
+                invoiceTotal += orderTotal;
+              }
+            });
+            const dateTotal = cashTotal + invoiceTotal;
             
             const dateHeader = document.createElement('div');
             dateHeader.className = 'date-group-header';
@@ -437,7 +447,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
               : dateOrders[0].createdAt;
             dateHeader.innerHTML = `
               <strong>${formatDateOnly(displayDate)}</strong>
-              <span class="date-total">${dateTotal > 0 ? 'Dnevni znesek: ' + dateTotal.toFixed(2) + ' €' : ''}</span>
+              <span class="date-total">Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
             `;
             deliveredList.appendChild(dateHeader);
 
