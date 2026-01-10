@@ -422,7 +422,8 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           });
 
           // Render each date group
-          Object.keys(ordersByDate).sort().reverse().forEach(async dateKey => {
+          const sortedDates = Object.keys(ordersByDate).sort().reverse();
+          for (const dateKey of sortedDates) {
             const dateOrders = ordersByDate[dateKey];
             
             // Calculate totals by payment method
@@ -540,7 +541,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
             }
 
             renderOrdersGroup(dateOrders, deliveredList);
-          });
+          }
         } else {
           deliveredList.innerHTML = '<i>Ni še oddanih naročil.</i>';
         }
