@@ -526,20 +526,19 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
             bottomRow.appendChild(saveBtn);
             dateHeader.appendChild(bottomRow);
             
+            // Add banner to DOM first
             deliveredList.appendChild(dateHeader);
             
-            // Load existing delivery day data
-            try {
-              const res = await fetch(`/api/delivery-day/${dateKey}`);
-              if (res.ok) {
-                const data = await res.json();
+            // Load existing delivery day data asynchronously
+            fetch(`/api/delivery-day/${dateKey}`)
+              .then(res => res.json())
+              .then(data => {
                 kmInput.value = data.kilometers || '';
                 minInput.value = data.minutes || '';
-              }
-            } catch (err) {
-              console.error('Failed to load delivery day data:', err);
-            }
+              })
+              .catch(err => console.error('Failed to load delivery day data:', err));
 
+            // Render orders for this date
             renderOrdersGroup(dateOrders, deliveredList);
           }
         } else {
