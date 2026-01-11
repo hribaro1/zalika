@@ -120,7 +120,8 @@ const ArticleSchema = new mongoose.Schema({
   price: { type: Number, required: true, min: 0 },
   vatPercent: { type: Number, required: true, min: 0 },
   finalPrice: { type: Number, required: true, min: 0 },
-  usageCount: { type: Number, default: 0, min: 0 }
+  usageCount: { type: Number, default: 0, min: 0 },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null } // null = za vse stranke
 }, { timestamps: true });
 
 ArticleSchema.pre('validate', function() {

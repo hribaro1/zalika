@@ -128,7 +128,7 @@ async function loadArticlesCache() {
   }
 }
 
-function createArticleSelect(selectedId) {
+function createArticleSelect(selectedId, customerId = null) {
   const container = document.createElement('div');
   container.className = 'article-select-container';
   container.style.position = 'relative';
@@ -168,11 +168,20 @@ function createArticleSelect(selectedId) {
   container.appendChild(input);
   container.appendChild(suggestions);
   
+  // Filter articles based on customerId
+  const getFilteredArticles = () => {
+    return articlesCache.filter(a => {
+      // Show articles that are for all customers (customerId is null/undefined) 
+      // OR articles specifically for this customer
+      return !a.customerId || (customerId && String(a.customerId) === String(customerId));
+    });
+  };
+  
   input.addEventListener('focus', (e) => {
     e.stopPropagation();
     const q = input.value.trim().toLowerCase();
     if (!q) {
-      const filtered = articlesCache;
+      const filtered = getFilteredArticles();
       suggestions.innerHTML = '';
       filtered.forEach(a => {
         const item = document.createElement('div');
@@ -206,7 +215,7 @@ function createArticleSelect(selectedId) {
       container.dataset.selectedId = '';
       return;
     }
-    const filtered = articlesCache.filter(a => a.name && String(a.name).toLowerCase().includes(q));
+    const filtered = getFilteredArticles().filter(a => a.name && String(a.name).toLowerCase().includes(q));
     suggestions.innerHTML = '';
     filtered.forEach(a => {
       const item = document.createElement('div');
@@ -691,6 +700,7 @@ function renderOrdersGroup(orders, list) {
       const itemsContainer = document.createElement('div');
       itemsContainer.className = 'items-container';
       div.dataset.items = JSON.stringify(currentItems);
+      div.dataset.customerId = o.customerId || '';
 
       // Check if we're in delivery view - disable editing
       const isDeliveryView = window.location.pathname === '/delivery';
@@ -733,7 +743,7 @@ function renderOrdersGroup(orders, list) {
           e.stopPropagation();
         });
 
-        const articleSel = createArticleSelect();
+        const articleSel = createArticleSelect(null, o.customerId);
         articleSel.style.marginTop = '8px';
         articleSel.style.marginRight = '12px';
         const qtyIn = document.createElement('input');
@@ -1310,10 +1320,14 @@ function openEditItemModal(orderId, itemIndex, item) {
   // Set current values
   document.getElementById('edit-item-quantity').value = typeof item.quantity === 'number' ? item.quantity : 1;
   
+  // Get customerId from order element
+  const orderEl = document.getElementById('order-' + orderId);
+  const customerId = orderEl ? orderEl.dataset.customerId : null;
+  
   // Setup article select
   const articleContainer = document.getElementById('edit-item-article-container');
   articleContainer.innerHTML = '';
-  const articleSel = createArticleSelect(item.articleId);
+  const articleSel = createArticleSelect(item.articleId, customerId);
   articleContainer.appendChild(articleSel);
   
   // Trigger the dropdown to show when the input is ready

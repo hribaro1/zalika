@@ -6,6 +6,7 @@ socket.on('articleUpdated', () => loadArticlesCache().then(applyFilterArticles))
 socket.on('articleDeleted', () => loadArticlesCache().then(applyFilterArticles));
 
 let articlesCache = [];
+let customersCache = [];
 
 function escapeHtml(s){ if(!s && s !== 0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -33,6 +34,34 @@ async function loadArticlesCache() {
   }
 }
 
+async function loadCustomersCache() {
+  try {
+    const res = await fetch('/api/customers');
+    if (!res.ok) throw new Error('Failed to fetch customers');
+    customersCache = await res.json();
+    populateCustomerDropdowns();
+  } catch (err) {
+    console.error('Could not load customers', err);
+  }
+}
+
+function populateCustomerDropdowns() {
+  const addSelect = document.getElementById('a-customer');
+  const editSelect = document.getElementById('edit-a-customer');
+  
+  [addSelect, editSelect].forEach(select => {
+    if (!select) return;
+    // Keep the first "Vse stranke" option
+    select.innerHTML = '<option value="">Vse stranke</option>';
+    customersCache.forEach(c => {
+      const option = document.createElement('option');
+      option.value = c._id;
+      option.textContent = c.name;
+      select.appendChild(option);
+    });
+  });
+}
+
 function renderArticles(articles) {
   const list = document.getElementById('articlesList');
   if (!articles.length) { list.innerHTML = '<i>Ni artiklov.</i>'; return; }
@@ -44,7 +73,12 @@ function renderArticles(articles) {
     el.style.cursor = 'pointer';
     const textDiv = document.createElement('div');
     const usageCount = a.usageCount || 0;
-    textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} € • Števec: ${usageCount}</div>`;
+    let customerInfo = '';
+    if (a.customerId) {
+      const customer = customersCache.find(c => c._id === a.customerId);
+      customerInfo = ` • Stranka: <strong>${escapeHtml(customer ? customer.name : 'Neznana')}</strong>`;
+    }
+    textDiv.innerHTML = `<strong>${escapeHtml(a.name)}</strong> <div class="meta">${escapeHtml(a.unit)} • ${Number(a.price).toFixed(2)} € • DDV: ${Number(a.vatPercent)}% • Končna: ${Number(a.finalPrice).toFixed(2)} € • Števec: ${usageCount}${customerInfo}</div>`;
     el.appendChild(textDiv);
     el.addEventListener('click', () => openEdit(a));
     list.appendChild(el);
@@ -64,6 +98,7 @@ async function addArticle(){
   const unit = document.getElementById('a-unit').value.trim();
   const price = parseFloat(document.getElementById('a-price').value);
   const vat = parseFloat(document.getElementById('a-vat').value);
+  const customerId = document.getElementById('a-customer').value || null;
   if(!name) return alert('Vnesite naziv.');
   if(!unit) return alert('Vnesite enoto mere.');
   if(isNaN(price) || price < 0) return alert('Vnesite veljavno ceno.');
@@ -72,7 +107,7 @@ async function addArticle(){
     const res = await fetch('/api/articles', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, unit, price, vatPercent: vat })
+      body: JSON.stringify({ name, unit, price, vatPercent: vat, customerId })
     });
     if(!res.ok){
       const e = await res.json().catch(()=>null);
@@ -83,6 +118,7 @@ async function addArticle(){
     document.getElementById('a-unit').value='';
     document.getElementById('a-price').value='';
     document.getElementById('a-vat').value='';
+    document.getElementById('a-customer').value='';
     document.getElementById('a-final').textContent = '0.00 €';
     loadArticlesCache().then(applyFilterArticles);
   }catch(err){
@@ -108,6 +144,7 @@ function openEdit(a){
   document.getElementById('edit-a-unit').value = a.unit || '';
   document.getElementById('edit-a-price').value = (a.price != null) ? a.price : '';
   document.getElementById('edit-a-vat').value = (a.vatPercent != null) ? a.vatPercent : '';
+  document.getElementById('edit-a-customer').value = a.customerId || '';
   document.getElementById('edit-a-final').textContent = (a.finalPrice != null) ? a.finalPrice.toFixed(2) + ' €' : '0.00 €';
 }
 
@@ -123,6 +160,7 @@ async function saveEdit(){
   const unit = document.getElementById('edit-a-unit').value.trim();
   const price = parseFloat(document.getElementById('edit-a-price').value);
   const vat = parseFloat(document.getElementById('edit-a-vat').value);
+  const customerId = document.getElementById('edit-a-customer').value || null;
   if(!name) return alert('Vnesite naziv.');
   if(!unit) return alert('Vnesite enoto mere.');
   if(isNaN(price) || price < 0) return alert('Vnesite veljavno ceno.');
@@ -131,7 +169,7 @@ async function saveEdit(){
     const res = await fetch('/api/articles/' + id, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, unit, price, vatPercent: vat })
+      body: JSON.stringify({ name, unit, price, vatPercent: vat, customerId })
     });
     if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
     closeEdit();
@@ -162,5 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('edit-a-delete').addEventListener('click', (e)=>{ e.preventDefault(); const modal = document.getElementById('articleEditModal'); deleteArticle(modal.dataset.editingId); closeEdit(); });
   const search = document.getElementById('articleSearch');
   if (search) search.addEventListener('input', applyFilterArticles);
+  loadCustomersCache();
   loadArticlesCache().then(() => renderArticles(articlesCache));
 });
