@@ -256,7 +256,7 @@ function createArticleSelect(selectedId, customerId = null) {
   return container;
 }
 
-function renderOrderItems(container, items, orderId, allowEdit = true) {
+function renderOrderItems(container, items, orderId, allowEdit = true, customerId = null, hidePrices = false) {
   container.innerHTML = '';
   if (!items || !items.length) {
     container.innerHTML = '<i>Ni pozicij.</i>';
@@ -275,13 +275,73 @@ function renderOrderItems(container, items, orderId, allowEdit = true) {
     const qtyDisplay = Number(qty) % 1 === 0 ? qty : Number(qty).toFixed(1);
     const name = it.name || '(artikel)';
     const line = (typeof it.lineTotal !== 'undefined') ? Number(it.lineTotal).toFixed(2) : ((it.finalPrice || 0) * qty).toFixed(2);
-    row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qtyDisplay} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
+    
+    if (hidePrices) {
+      // Show only name and quantity without prices
+      row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>Količina: ${qtyDisplay}</span></div>`;
+    } else {
+      row.innerHTML = `<div style="display: flex; justify-content: space-between;"><span><strong>${escapeHtml(name)}</strong></span><span>${qtyDisplay} × ${Number(it.finalPrice||0).toFixed(2)} € = <strong>${line} €</strong></span></div>`;
+    }
+    
     if (allowEdit) {
       row.addEventListener('click', () => openEditItemModal(orderId, index, it));
     }
     ul.appendChild(row);
   });
   container.appendChild(ul);
+}
+
+async function updateCustomerArticleQuantity(orderId, article, quantity, orderEl) {
+  // read current items from dataset
+  let items = [];
+  try { items = JSON.parse(orderEl.dataset.items || '[]'); } catch(e){ items = []; }
+
+  // Find if article already exists
+  const existingIndex = items.findIndex(it => String(it.articleId) === String(article._id));
+
+  if (quantity > 0) {
+    const newItem = {
+      articleId: article._id,
+      name: article.name,
+      unit: article.unit,
+      price: article.price,
+      vatPercent: article.vatPercent,
+      finalPrice: article.finalPrice,
+      quantity: quantity,
+      lineTotal: Math.round(article.finalPrice * quantity * 100) / 100
+    };
+
+    if (existingIndex >= 0) {
+      // Update existing item
+      items[existingIndex] = newItem;
+    } else {
+      // Add new item
+      items.push(newItem);
+    }
+  } else {
+    // Remove item if quantity is 0
+    if (existingIndex >= 0) {
+      items.splice(existingIndex, 1);
+    }
+  }
+
+  // Ensure order stays expanded when socket update arrives
+  expandedOrders.add(orderId);
+  pendingOrderScrollId = orderId;
+
+  // send update to server
+  try {
+    const res = await fetch(`/order/${orderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
+    // Socket update will handle the refresh
+  } catch (err) {
+    console.error(err);
+    alert('Napaka pri posodabljanju pozicije. Preverite konzolo.');
+  }
 }
 
 async function addItemToOrder(orderId, orderEl) {
@@ -705,12 +765,16 @@ function renderOrdersGroup(orders, list) {
       // Check if we're in delivery view - disable editing
       const isDeliveryView = window.location.pathname === '/delivery';
 
-      // Render existing items (disable editing in delivery view)
-      renderOrderItems(itemsContainer, currentItems, o._id, !isDeliveryView);
+      // Check if customer has custom articles
+      const customerArticles = o.customerId ? articlesCache.filter(a => a.customerId && String(a.customerId) === String(o.customerId)) : [];
+      const hasCustomerArticles = customerArticles.length > 0;
 
-      // Calculate and display total
+      // Render existing items (disable editing in delivery view, hide prices if has custom articles)
+      renderOrderItems(itemsContainer, currentItems, o._id, !isDeliveryView, o.customerId, hasCustomerArticles);
+
+      // Calculate and display total (only if not hiding prices)
       const total = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-      if (total > 0) {
+      if (total > 0 && !hasCustomerArticles) {
         const totalDiv = document.createElement('div');
         totalDiv.className = 'order-total';
         totalDiv.innerHTML = `<strong>Skupni znesek: ${total.toFixed(2)} €</strong>`;
@@ -732,7 +796,7 @@ function renderOrdersGroup(orders, list) {
         historyDiv.appendChild(ul);
       }
 
-      // Add item form (only if not in delivery view)
+      // Add item form or customer articles form (only if not in delivery view)
       let addWrap = null;
       if (!isDeliveryView) {
         addWrap = document.createElement('div');
@@ -743,26 +807,77 @@ function renderOrdersGroup(orders, list) {
           e.stopPropagation();
         });
 
-        const articleSel = createArticleSelect(null, o.customerId);
-        articleSel.style.marginTop = '8px';
-        articleSel.style.marginRight = '12px';
-        const qtyIn = document.createElement('input');
-        qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
-        qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
+        if (hasCustomerArticles) {
+          // Show all customer articles with quantity inputs
+          const articlesTitle = document.createElement('div');
+          articlesTitle.innerHTML = '<strong>Artikli stranke - vnesite količine:</strong>';
+          articlesTitle.style.marginTop = '8px';
+          articlesTitle.style.marginBottom = '8px';
+          addWrap.appendChild(articlesTitle);
 
-        // ✅ Prevent quantity input clicks from propagating
-        qtyIn.addEventListener('click', (e) => {
-          e.stopPropagation();
-        });
+          customerArticles.forEach((art, idx) => {
+            const artRow = document.createElement('div');
+            artRow.style.display = 'flex';
+            artRow.style.alignItems = 'center';
+            artRow.style.marginBottom = '4px';
+            artRow.style.gap = '8px';
 
-        const addBtn = document.createElement('button');
-        addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
-        addBtn.style.marginLeft = '8px';
-        addBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          addItemToOrder(o._id, div);
-        });
-        addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
+            const artLabel = document.createElement('span');
+            artLabel.textContent = art.name;
+            artLabel.style.flex = '1';
+
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'number';
+            qtyInput.min = '0';
+            qtyInput.step = '0.1';
+            qtyInput.placeholder = 'Količina';
+            qtyInput.style.width = '80px';
+            qtyInput.className = 'customer-article-qty';
+            qtyInput.dataset.articleId = art._id;
+
+            // Find if this article already exists in items
+            const existingItem = currentItems.find(it => String(it.articleId) === String(art._id));
+            if (existingItem) {
+              qtyInput.value = existingItem.quantity || 0;
+            }
+
+            // Update item on change
+            qtyInput.addEventListener('change', async () => {
+              const qty = parseFloat(qtyInput.value) || 0;
+              await updateCustomerArticleQuantity(o._id, art, qty, div);
+            });
+
+            qtyInput.addEventListener('click', (e) => {
+              e.stopPropagation();
+            });
+
+            artRow.appendChild(artLabel);
+            artRow.appendChild(qtyInput);
+            addWrap.appendChild(artRow);
+          });
+        } else {
+          // Standard article selector for customers without custom articles
+          const articleSel = createArticleSelect(null, o.customerId);
+          articleSel.style.marginTop = '8px';
+          articleSel.style.marginRight = '12px';
+          const qtyIn = document.createElement('input');
+          qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
+          qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
+
+          // ✅ Prevent quantity input clicks from propagating
+          qtyIn.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+
+          const addBtn = document.createElement('button');
+          addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
+          addBtn.style.marginLeft = '8px';
+          addBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addItemToOrder(o._id, div);
+          });
+          addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
+        }
       }
 
       const statusSelect = document.createElement('select');

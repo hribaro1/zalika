@@ -94,21 +94,36 @@ async function printOrder(order) {
             printer.text('POZICIJE:');
             printer.text('--------------------------------');
             
+            // Check if customer has custom articles (hide prices if true)
+            const hasCustomerArticles = order.customerType === 'company' && order.customerId;
+            
             let total = 0;
             order.items.forEach((item, index) => {
               printer.text(`${index + 1}. ${item.name}`);
-              printer.text(`   ${item.quantity} x ${item.finalPrice.toFixed(2)} EUR`);
-              printer.text(`   Skupaj: ${item.lineTotal.toFixed(2)} EUR`);
+              
+              if (hasCustomerArticles) {
+                // Only show quantity without prices
+                printer.text(`   Kolicina: ${item.quantity}`);
+              } else {
+                // Show full price information
+                printer.text(`   ${item.quantity} x ${item.finalPrice.toFixed(2)} EUR`);
+                printer.text(`   Skupaj: ${item.lineTotal.toFixed(2)} EUR`);
+              }
+              
               total += item.lineTotal || 0;
             });
             
             printer.text('================================');
-            printer
-              .style('bu')
-              .size(1, 1)
-              .text(`SKUPAJ: ${total.toFixed(2)} EUR`)
-              .style('normal')
-              .size(0, 0);
+            
+            if (!hasCustomerArticles) {
+              // Only show total if prices are visible
+              printer
+                .style('bu')
+                .size(1, 1)
+                .text(`SKUPAJ: ${total.toFixed(2)} EUR`)
+                .style('normal')
+                .size(0, 0);
+            }
           }
 
           // Print order notes if available
