@@ -425,20 +425,16 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
         for (const dateKey of sortedDates) {
           const dayOrders = ordersByDate[dateKey];
           
-          // Get unique orders for total calculation (avoid counting same order twice)
+          // Get unique orders for orderIds array (avoid duplicates)
           const uniqueOrderIds = new Set();
-          const uniqueOrders = [];
           [...dayOrders.arrived, ...dayOrders.delivered].forEach(o => {
-            if (!uniqueOrderIds.has(o._id)) {
-              uniqueOrderIds.add(o._id);
-              uniqueOrders.push(o);
-            }
+            uniqueOrderIds.add(o._id);
           });
           
-          // Calculate totals by payment method
+          // Calculate totals by payment method - ONLY for delivered orders
           let cashTotal = 0;
           let invoiceTotal = 0;
-          uniqueOrders.forEach(o => {
+          dayOrders.delivered.forEach(o => {
             const items = o.items || [];
             const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
             if (o.paymentMethod === 'cash') {
