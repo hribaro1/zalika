@@ -387,35 +387,27 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     const isDeliveryView = window.location.pathname === '/delivery';
 
     if (isDeliveryView) {
-      // Group all orders by date - active orders by createdAt, delivered by Oddano status date
+      // Group orders by date - each order can appear on multiple dates
       const ordersByDate = {};
       
       orders.forEach(o => {
-        let dateKey;
+        // Add order to "arrived" on its createdAt date
+        const arrivedDateKey = getDateKey(o.createdAt);
+        if (!ordersByDate[arrivedDateKey]) {
+          ordersByDate[arrivedDateKey] = { arrived: [], delivered: [] };
+        }
+        ordersByDate[arrivedDateKey].arrived.push(o);
         
-        if (o.status === 'Oddano') {
-          // Delivered orders: use date when status changed to Oddano
-          let statusDate = o.createdAt;
-          if (o.statusHistory && o.statusHistory.length > 0) {
-            const statusEntry = o.statusHistory.slice().reverse().find(h => h.status === 'Oddano');
-            if (statusEntry && statusEntry.timestamp) {
-              statusDate = statusEntry.timestamp;
+        // Add order to "delivered" on its Oddano status date (if applicable)
+        if (o.status === 'Oddano' && o.statusHistory && o.statusHistory.length > 0) {
+          const statusEntry = o.statusHistory.slice().reverse().find(h => h.status === 'Oddano');
+          if (statusEntry && statusEntry.timestamp) {
+            const deliveredDateKey = getDateKey(statusEntry.timestamp);
+            if (!ordersByDate[deliveredDateKey]) {
+              ordersByDate[deliveredDateKey] = { arrived: [], delivered: [] };
             }
+            ordersByDate[deliveredDateKey].delivered.push(o);
           }
-          dateKey = getDateKey(statusDate);
-        } else {
-          // Active orders: use createdAt date
-          dateKey = getDateKey(o.createdAt);
-        }
-        
-        if (!ordersByDate[dateKey]) {
-          ordersByDate[dateKey] = { active: [], delivered: [] };
-        }
-        
-        if (o.status === 'Oddano') {
-          ordersByDate[dateKey].delivered.push(o);
-        } else {
-          ordersByDate[dateKey].active.push(o);
         }
       });
       
@@ -432,12 +424,21 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       if (sortedDates.length > 0) {
         for (const dateKey of sortedDates) {
           const dayOrders = ordersByDate[dateKey];
-          const allDayOrders = [...dayOrders.active, ...dayOrders.delivered];
+          
+          // Get unique orders for total calculation (avoid counting same order twice)
+          const uniqueOrderIds = new Set();
+          const uniqueOrders = [];
+          [...dayOrders.arrived, ...dayOrders.delivered].forEach(o => {
+            if (!uniqueOrderIds.has(o._id)) {
+              uniqueOrderIds.add(o._id);
+              uniqueOrders.push(o);
+            }
+          });
           
           // Calculate totals by payment method
           let cashTotal = 0;
           let invoiceTotal = 0;
-          allDayOrders.forEach(o => {
+          uniqueOrders.forEach(o => {
             const items = o.items || [];
             const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
             if (o.paymentMethod === 'cash') {
@@ -452,12 +453,6 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           dateHeader.className = 'date-group-header';
           dateHeader.style.flexWrap = 'wrap';
           
-          // Use first order to get display date
-          const displayDate = allDayOrders[0] ? 
-            (allDayOrders[0].statusHistory && allDayOrders[0].statusHistory.length > 0 
-              ? allDayOrders[0].statusHistory[0].timestamp 
-              : allDayOrders[0].createdAt) : dateKey;
-          
           // First row: Date and totals
           const firstRow = document.createElement('div');
           firstRow.style.display = 'flex';
@@ -465,8 +460,8 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           firstRow.style.alignItems = 'center';
           firstRow.style.width = '100%';
           firstRow.innerHTML = `
-            <strong>${formatDateOnly(displayDate)}</strong>
-            <span class="date-total">Pripeljano: ${dayOrders.active.length} | Oddano: ${dayOrders.delivered.length} | Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
+            <strong>${formatDateOnly(dateKey)}</strong>
+            <span class="date-total">Pripeljano: ${dayOrders.arrived.length} | Odpeljano: ${dayOrders.delivered.length} | Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
           `;
           dateHeader.appendChild(firstRow);
           
@@ -534,9 +529,8 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           saveBtn.addEventListener('click', async () => {
             const km = parseFloat(kmInput.value) || 0;
             const minutes = parseInt(minutesInput.value) || 0;
-            const arrivedOrderIds = dayOrders.active.map(o => o._id);
+            const arrivedOrderIds = dayOrders.arrived.map(o => o._id);
             const deliveredOrderIds = dayOrders.delivered.map(o => o._id);
-            const allOrderIds = allDayOrders.map(o => o._id);
             
             try {
               const res = await fetch('/api/delivery-day', {
@@ -546,7 +540,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
                   date: dateKey, 
                   kilometers: km, 
                   minutes: minutes, 
-                  orderIds: allOrderIds,
+                  orderIds: Array.from(uniqueOrderIds),
                   arrivedOrderIds: arrivedOrderIds,
                   deliveredOrderIds: deliveredOrderIds
                 })
@@ -575,20 +569,20 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
             })
             .catch(err => console.error('Failed to load delivery day data:', err));
 
-          // Render active orders
-          if (dayOrders.active.length > 0) {
-            const activeHeader = document.createElement('h3');
-            activeHeader.textContent = 'Pripeljana naročila';
-            activeHeader.style.marginTop = '16px';
-            activeHeader.style.marginBottom = '8px';
-            list.appendChild(activeHeader);
-            renderOrdersGroup(dayOrders.active, list);
+          // Render arrived orders
+          if (dayOrders.arrived.length > 0) {
+            const arrivedHeader = document.createElement('h3');
+            arrivedHeader.textContent = 'Pripeljana naročila';
+            arrivedHeader.style.marginTop = '16px';
+            arrivedHeader.style.marginBottom = '8px';
+            list.appendChild(arrivedHeader);
+            renderOrdersGroup(dayOrders.arrived, list);
           }
 
           // Render delivered orders
           if (dayOrders.delivered.length > 0) {
             const deliveredHeader = document.createElement('h3');
-            deliveredHeader.textContent = 'Oddana naročila';
+            deliveredHeader.textContent = 'Odpeljana naročila';
             deliveredHeader.style.marginTop = '16px';
             deliveredHeader.style.marginBottom = '8px';
             list.appendChild(deliveredHeader);
