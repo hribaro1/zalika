@@ -683,7 +683,7 @@ function renderOrdersGroup(orders, list) {
 
       // Display status history
       let historyDiv = null;
-      if (o.statusHistory && o.statusHistory.length > 1) {
+      if (o.statusHistory && o.statusHistory.length > 0) {
         historyDiv = document.createElement('div');
         historyDiv.className = 'status-history';
         historyDiv.innerHTML = '<strong>Zgodovina statusa:</strong>';
