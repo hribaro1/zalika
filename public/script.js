@@ -732,6 +732,10 @@ function renderOrdersGroup(orders, list) {
       const currentItems = o.items || [];
       const totalAmount = currentItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
 
+      // Check if customer has custom articles
+      const customerArticles = o.customerId ? articlesCache.filter(a => a.customerId && String(a.customerId) === String(o.customerId)) : [];
+      const hasCustomerArticles = customerArticles.length > 0;
+
       // Render compact if order is not in expandedOrders Set
       if (!expandedOrders.has(o._id)) {
         div.classList.add('order-compact');
@@ -741,11 +745,17 @@ function renderOrdersGroup(orders, list) {
           div.classList.add('oddano-completed');
         }
         
+        // Calculate total items count
+        const totalItemsCount = currentItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        
         div.innerHTML = `
           <strong>Št. naročila: ${escapeHtml(o.orderNumber || '')}</strong>
           <span>${escapeHtml(o.name || '')}${o.service ? ' — ' + escapeHtml(o.service) : ''}</span><br/>
           <span>${pickupLabel(o.pickupMode)}</span><br/>
-          ${totalAmount > 0 ? `<span><strong>${totalAmount.toFixed(2)} €</strong></span>` : ''}
+          ${hasCustomerArticles 
+            ? (totalItemsCount > 0 ? `<span><strong>Skupaj artiklov: ${totalItemsCount}</strong></span>` : '')
+            : (totalAmount > 0 ? `<span><strong>${totalAmount.toFixed(2)} €</strong></span>` : '')
+          }
         `;
         div.style.cursor = 'pointer';
         div.addEventListener('click', () => {
@@ -764,10 +774,6 @@ function renderOrdersGroup(orders, list) {
 
       // Check if we're in delivery view - disable editing
       const isDeliveryView = window.location.pathname === '/delivery';
-
-      // Check if customer has custom articles
-      const customerArticles = o.customerId ? articlesCache.filter(a => a.customerId && String(a.customerId) === String(o.customerId)) : [];
-      const hasCustomerArticles = customerArticles.length > 0;
 
       // Render existing items (disable editing in delivery view, hide prices if has custom articles)
       renderOrderItems(itemsContainer, currentItems, o._id, !isDeliveryView, o.customerId, hasCustomerArticles);
