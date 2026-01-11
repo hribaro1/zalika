@@ -442,18 +442,33 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
             
             const dateHeader = document.createElement('div');
             dateHeader.className = 'date-group-header';
+            dateHeader.style.flexWrap = 'wrap';
             
             const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
               ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
               : dateOrders[0].createdAt;
             
-            // Create banner with flex layout
-            dateHeader.innerHTML = `
+            // First row: Date and totals
+            const firstRow = document.createElement('div');
+            firstRow.style.display = 'flex';
+            firstRow.style.justifyContent = 'space-between';
+            firstRow.style.alignItems = 'center';
+            firstRow.style.width = '100%';
+            firstRow.innerHTML = `
               <strong>${formatDateOnly(displayDate)}</strong>
               <span class="date-total">Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
             `;
+            dateHeader.appendChild(firstRow);
             
-            // Add km input section
+            // Second row: km and minutes inputs (left aligned)
+            const secondRow = document.createElement('div');
+            secondRow.style.display = 'flex';
+            secondRow.style.alignItems = 'center';
+            secondRow.style.gap = '16px';
+            secondRow.style.width = '100%';
+            secondRow.style.marginTop = '8px';
+            
+            // Km input section
             const kmSection = document.createElement('span');
             kmSection.style.display = 'flex';
             kmSection.style.alignItems = 'center';
@@ -474,32 +489,61 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
             kmInput.className = 'delivery-km-input';
             kmInput.dataset.date = dateKey;
             
+            kmSection.appendChild(kmLabel);
+            kmSection.appendChild(kmInput);
+            
+            // Minutes input section
+            const minutesSection = document.createElement('span');
+            minutesSection.style.display = 'flex';
+            minutesSection.style.alignItems = 'center';
+            minutesSection.style.gap = '8px';
+            
+            const minutesLabel = document.createElement('label');
+            minutesLabel.textContent = 'Minute: ';
+            minutesLabel.style.fontWeight = 'normal';
+            minutesLabel.style.fontSize = '14px';
+            
+            const minutesInput = document.createElement('input');
+            minutesInput.type = 'number';
+            minutesInput.min = '0';
+            minutesInput.step = '1';
+            minutesInput.placeholder = 'min';
+            minutesInput.style.width = '70px';
+            minutesInput.style.padding = '4px';
+            minutesInput.className = 'delivery-minutes-input';
+            minutesInput.dataset.date = dateKey;
+            
+            minutesSection.appendChild(minutesLabel);
+            minutesSection.appendChild(minutesInput);
+            
+            // Save button
             const saveBtn = document.createElement('button');
             saveBtn.textContent = 'Shrani';
             saveBtn.className = 'small-btn';
             saveBtn.style.fontSize = '12px';
             saveBtn.addEventListener('click', async () => {
               const km = parseFloat(kmInput.value) || 0;
+              const minutes = parseInt(minutesInput.value) || 0;
               const orderIds = dateOrders.map(o => o._id);
               
               try {
                 const res = await fetch('/api/delivery-day', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ date: dateKey, kilometers: km, minutes: 0, orderIds })
+                  body: JSON.stringify({ date: dateKey, kilometers: km, minutes: minutes, orderIds })
                 });
                 if (!res.ok) throw new Error('Failed to save');
-                alert('Kilometri shranjeni');
+                alert('Podatki shranjeni');
               } catch (err) {
                 console.error(err);
                 alert('Napaka pri shranjevanju');
               }
             });
             
-            kmSection.appendChild(kmLabel);
-            kmSection.appendChild(kmInput);
-            kmSection.appendChild(saveBtn);
-            dateHeader.appendChild(kmSection);
+            secondRow.appendChild(kmSection);
+            secondRow.appendChild(minutesSection);
+            secondRow.appendChild(saveBtn);
+            dateHeader.appendChild(secondRow);
             
             deliveredList.appendChild(dateHeader);
             
@@ -508,6 +552,7 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
               .then(res => res.json())
               .then(data => {
                 kmInput.value = data.kilometers || '';
+                minutesInput.value = data.minutes || '';
               })
               .catch(err => console.error('Failed to load delivery day data:', err));
 
