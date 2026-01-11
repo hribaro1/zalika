@@ -143,7 +143,9 @@ const DeliveryDaySchema = new mongoose.Schema({
   date: { type: String, required: true, unique: true }, // YYYY-MM-DD format
   kilometers: { type: Number, default: 0, min: 0 },
   minutes: { type: Number, default: 0, min: 0 },
-  orderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }]
+  orderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
+  arrivedOrderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }], // Pripeljana naročila (status Naročeno)
+  deliveredOrderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }] // Oddana naročila (status Oddano)
 }, { timestamps: true });
 
 const DeliveryDay = mongoose.model('DeliveryDay', DeliveryDaySchema);
@@ -521,7 +523,7 @@ app.get("/api/delivery-days", async (req, res) => {
 app.get("/api/delivery-day/:date", async (req, res) => {
   try {
     const deliveryDay = await DeliveryDay.findOne({ date: req.params.date }).lean();
-    if (!deliveryDay) return res.json({ date: req.params.date, kilometers: 0, minutes: 0, orderIds: [] });
+    if (!deliveryDay) return res.json({ date: req.params.date, kilometers: 0, minutes: 0, orderIds: [], arrivedOrderIds: [], deliveredOrderIds: [] });
     res.json(deliveryDay);
   } catch (err) {
     console.error(err);
@@ -531,7 +533,7 @@ app.get("/api/delivery-day/:date", async (req, res) => {
 
 app.post("/api/delivery-day", async (req, res) => {
   try {
-    const { date, kilometers, minutes, orderIds } = req.body;
+    const { date, kilometers, minutes, orderIds, arrivedOrderIds, deliveredOrderIds } = req.body;
     
     // Find or create delivery day
     let deliveryDay = await DeliveryDay.findOne({ date });
@@ -540,13 +542,17 @@ app.post("/api/delivery-day", async (req, res) => {
       deliveryDay.kilometers = kilometers;
       deliveryDay.minutes = minutes;
       deliveryDay.orderIds = orderIds || [];
+      deliveryDay.arrivedOrderIds = arrivedOrderIds || [];
+      deliveryDay.deliveredOrderIds = deliveredOrderIds || [];
       await deliveryDay.save();
     } else {
       deliveryDay = new DeliveryDay({
         date,
         kilometers,
         minutes,
-        orderIds: orderIds || []
+        orderIds: orderIds || [],
+        arrivedOrderIds: arrivedOrderIds || [],
+        deliveredOrderIds: deliveredOrderIds || []
       });
       await deliveryDay.save();
     }

@@ -387,180 +387,216 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
     const isDeliveryView = window.location.pathname === '/delivery';
 
     if (isDeliveryView) {
-      // Split delivery orders into active and delivered
-      const activeOrders = orders.filter(o => o.status !== 'Oddano');
-      const deliveredOrders = orders.filter(o => o.status === 'Oddano');
-
-      // Render active orders
-      if (activeOrders.length > 0) {
-        renderOrdersGroup(activeOrders, list);
-      } else {
-        list.innerHTML = '<i>Ni aktivnih naročil za dostavo.</i>';
-      }
-
-      // Render delivered orders grouped by date
+      // Group all orders by date - active orders by createdAt, delivered by Oddano status date
+      const ordersByDate = {};
+      
+      orders.forEach(o => {
+        let dateKey;
+        
+        if (o.status === 'Oddano') {
+          // Delivered orders: use date when status changed to Oddano
+          let statusDate = o.createdAt;
+          if (o.statusHistory && o.statusHistory.length > 0) {
+            const statusEntry = o.statusHistory.slice().reverse().find(h => h.status === 'Oddano');
+            if (statusEntry && statusEntry.timestamp) {
+              statusDate = statusEntry.timestamp;
+            }
+          }
+          dateKey = getDateKey(statusDate);
+        } else {
+          // Active orders: use createdAt date
+          dateKey = getDateKey(o.createdAt);
+        }
+        
+        if (!ordersByDate[dateKey]) {
+          ordersByDate[dateKey] = { active: [], delivered: [] };
+        }
+        
+        if (o.status === 'Oddano') {
+          ordersByDate[dateKey].delivered.push(o);
+        } else {
+          ordersByDate[dateKey].active.push(o);
+        }
+      });
+      
+      // Clear both lists
+      list.innerHTML = '';
       const deliveredList = document.getElementById('deliveredOrdersList');
       if (deliveredList) {
         deliveredList.innerHTML = '';
-        
-        if (deliveredOrders.length > 0) {
-          // Group by date
-          const ordersByDate = {};
-          deliveredOrders.forEach(o => {
-            let statusDate = o.createdAt;
-            if (o.statusHistory && o.statusHistory.length > 0) {
-              const statusEntry = o.statusHistory.slice().reverse().find(h => h.status === 'Oddano');
-              if (statusEntry && statusEntry.timestamp) {
-                statusDate = statusEntry.timestamp;
-              }
+      }
+      
+      // Render each date group
+      const sortedDates = Object.keys(ordersByDate).sort().reverse();
+      
+      if (sortedDates.length > 0) {
+        for (const dateKey of sortedDates) {
+          const dayOrders = ordersByDate[dateKey];
+          const allDayOrders = [...dayOrders.active, ...dayOrders.delivered];
+          
+          // Calculate totals by payment method
+          let cashTotal = 0;
+          let invoiceTotal = 0;
+          allDayOrders.forEach(o => {
+            const items = o.items || [];
+            const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+            if (o.paymentMethod === 'cash') {
+              cashTotal += orderTotal;
+            } else {
+              invoiceTotal += orderTotal;
             }
-            const dateKey = getDateKey(statusDate);
-            if (!ordersByDate[dateKey]) {
-              ordersByDate[dateKey] = [];
-            }
-            ordersByDate[dateKey].push(o);
           });
+          const dateTotal = cashTotal + invoiceTotal;
+          
+          const dateHeader = document.createElement('div');
+          dateHeader.className = 'date-group-header';
+          dateHeader.style.flexWrap = 'wrap';
+          
+          // Use first order to get display date
+          const displayDate = allDayOrders[0] ? 
+            (allDayOrders[0].statusHistory && allDayOrders[0].statusHistory.length > 0 
+              ? allDayOrders[0].statusHistory[0].timestamp 
+              : allDayOrders[0].createdAt) : dateKey;
+          
+          // First row: Date and totals
+          const firstRow = document.createElement('div');
+          firstRow.style.display = 'flex';
+          firstRow.style.justifyContent = 'space-between';
+          firstRow.style.alignItems = 'center';
+          firstRow.style.width = '100%';
+          firstRow.innerHTML = `
+            <strong>${formatDateOnly(displayDate)}</strong>
+            <span class="date-total">Pripeljano: ${dayOrders.active.length} | Oddano: ${dayOrders.delivered.length} | Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
+          `;
+          dateHeader.appendChild(firstRow);
+          
+          // Second row: km and minutes inputs (left aligned)
+          const secondRow = document.createElement('div');
+          secondRow.style.display = 'flex';
+          secondRow.style.alignItems = 'center';
+          secondRow.style.gap = '16px';
+          secondRow.style.width = '100%';
+          secondRow.style.marginTop = '8px';
+          
+          // Km input section
+          const kmSection = document.createElement('span');
+          kmSection.style.display = 'flex';
+          kmSection.style.alignItems = 'center';
+          kmSection.style.gap = '8px';
+          
+          const kmLabel = document.createElement('label');
+          kmLabel.textContent = 'Kilometri: ';
+          kmLabel.style.fontWeight = 'normal';
+          kmLabel.style.fontSize = '14px';
+          
+          const kmInput = document.createElement('input');
+          kmInput.type = 'number';
+          kmInput.min = '0';
+          kmInput.step = '0.1';
+          kmInput.placeholder = 'km';
+          kmInput.style.width = '70px';
+          kmInput.style.padding = '4px';
+          kmInput.className = 'delivery-km-input';
+          kmInput.dataset.date = dateKey;
+          
+          kmSection.appendChild(kmLabel);
+          kmSection.appendChild(kmInput);
+          
+          // Minutes input section
+          const minutesSection = document.createElement('span');
+          minutesSection.style.display = 'flex';
+          minutesSection.style.alignItems = 'center';
+          minutesSection.style.gap = '8px';
+          
+          const minutesLabel = document.createElement('label');
+          minutesLabel.textContent = 'Minute: ';
+          minutesLabel.style.fontWeight = 'normal';
+          minutesLabel.style.fontSize = '14px';
+          
+          const minutesInput = document.createElement('input');
+          minutesInput.type = 'number';
+          minutesInput.min = '0';
+          minutesInput.step = '1';
+          minutesInput.placeholder = 'min';
+          minutesInput.style.width = '70px';
+          minutesInput.style.padding = '4px';
+          minutesInput.className = 'delivery-minutes-input';
+          minutesInput.dataset.date = dateKey;
+          
+          minutesSection.appendChild(minutesLabel);
+          minutesSection.appendChild(minutesInput);
+          
+          // Save button
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Shrani';
+          saveBtn.className = 'small-btn';
+          saveBtn.style.fontSize = '12px';
+          saveBtn.addEventListener('click', async () => {
+            const km = parseFloat(kmInput.value) || 0;
+            const minutes = parseInt(minutesInput.value) || 0;
+            const arrivedOrderIds = dayOrders.active.map(o => o._id);
+            const deliveredOrderIds = dayOrders.delivered.map(o => o._id);
+            const allOrderIds = allDayOrders.map(o => o._id);
+            
+            try {
+              const res = await fetch('/api/delivery-day', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  date: dateKey, 
+                  kilometers: km, 
+                  minutes: minutes, 
+                  orderIds: allOrderIds,
+                  arrivedOrderIds: arrivedOrderIds,
+                  deliveredOrderIds: deliveredOrderIds
+                })
+              });
+              if (!res.ok) throw new Error('Failed to save');
+              alert('Podatki shranjeni');
+            } catch (err) {
+              console.error(err);
+              alert('Napaka pri shranjevanju');
+            }
+          });
+          
+          secondRow.appendChild(kmSection);
+          secondRow.appendChild(minutesSection);
+          secondRow.appendChild(saveBtn);
+          dateHeader.appendChild(secondRow);
+          
+          list.appendChild(dateHeader);
+          
+          // Load existing delivery day data
+          fetch(`/api/delivery-day/${dateKey}`)
+            .then(res => res.json())
+            .then(data => {
+              kmInput.value = data.kilometers || '';
+              minutesInput.value = data.minutes || '';
+            })
+            .catch(err => console.error('Failed to load delivery day data:', err));
 
-          // Render each date group
-          const sortedDates = Object.keys(ordersByDate).sort().reverse();
-          for (const dateKey of sortedDates) {
-            const dateOrders = ordersByDate[dateKey];
-            
-            // Calculate totals by payment method
-            let cashTotal = 0;
-            let invoiceTotal = 0;
-            dateOrders.forEach(o => {
-              const items = o.items || [];
-              const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
-              if (o.paymentMethod === 'cash') {
-                cashTotal += orderTotal;
-              } else {
-                invoiceTotal += orderTotal;
-              }
-            });
-            const dateTotal = cashTotal + invoiceTotal;
-            
-            const dateHeader = document.createElement('div');
-            dateHeader.className = 'date-group-header';
-            dateHeader.style.flexWrap = 'wrap';
-            
-            const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
-              ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
-              : dateOrders[0].createdAt;
-            
-            // First row: Date and totals
-            const firstRow = document.createElement('div');
-            firstRow.style.display = 'flex';
-            firstRow.style.justifyContent = 'space-between';
-            firstRow.style.alignItems = 'center';
-            firstRow.style.width = '100%';
-            firstRow.innerHTML = `
-              <strong>${formatDateOnly(displayDate)}</strong>
-              <span class="date-total">Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
-            `;
-            dateHeader.appendChild(firstRow);
-            
-            // Second row: km and minutes inputs (left aligned)
-            const secondRow = document.createElement('div');
-            secondRow.style.display = 'flex';
-            secondRow.style.alignItems = 'center';
-            secondRow.style.gap = '16px';
-            secondRow.style.width = '100%';
-            secondRow.style.marginTop = '8px';
-            
-            // Km input section
-            const kmSection = document.createElement('span');
-            kmSection.style.display = 'flex';
-            kmSection.style.alignItems = 'center';
-            kmSection.style.gap = '8px';
-            
-            const kmLabel = document.createElement('label');
-            kmLabel.textContent = 'Kilometri: ';
-            kmLabel.style.fontWeight = 'normal';
-            kmLabel.style.fontSize = '14px';
-            
-            const kmInput = document.createElement('input');
-            kmInput.type = 'number';
-            kmInput.min = '0';
-            kmInput.step = '0.1';
-            kmInput.placeholder = 'km';
-            kmInput.style.width = '70px';
-            kmInput.style.padding = '4px';
-            kmInput.className = 'delivery-km-input';
-            kmInput.dataset.date = dateKey;
-            
-            kmSection.appendChild(kmLabel);
-            kmSection.appendChild(kmInput);
-            
-            // Minutes input section
-            const minutesSection = document.createElement('span');
-            minutesSection.style.display = 'flex';
-            minutesSection.style.alignItems = 'center';
-            minutesSection.style.gap = '8px';
-            
-            const minutesLabel = document.createElement('label');
-            minutesLabel.textContent = 'Minute: ';
-            minutesLabel.style.fontWeight = 'normal';
-            minutesLabel.style.fontSize = '14px';
-            
-            const minutesInput = document.createElement('input');
-            minutesInput.type = 'number';
-            minutesInput.min = '0';
-            minutesInput.step = '1';
-            minutesInput.placeholder = 'min';
-            minutesInput.style.width = '70px';
-            minutesInput.style.padding = '4px';
-            minutesInput.className = 'delivery-minutes-input';
-            minutesInput.dataset.date = dateKey;
-            
-            minutesSection.appendChild(minutesLabel);
-            minutesSection.appendChild(minutesInput);
-            
-            // Save button
-            const saveBtn = document.createElement('button');
-            saveBtn.textContent = 'Shrani';
-            saveBtn.className = 'small-btn';
-            saveBtn.style.fontSize = '12px';
-            saveBtn.addEventListener('click', async () => {
-              const km = parseFloat(kmInput.value) || 0;
-              const minutes = parseInt(minutesInput.value) || 0;
-              const orderIds = dateOrders.map(o => o._id);
-              
-              try {
-                const res = await fetch('/api/delivery-day', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ date: dateKey, kilometers: km, minutes: minutes, orderIds })
-                });
-                if (!res.ok) throw new Error('Failed to save');
-                alert('Podatki shranjeni');
-              } catch (err) {
-                console.error(err);
-                alert('Napaka pri shranjevanju');
-              }
-            });
-            
-            secondRow.appendChild(kmSection);
-            secondRow.appendChild(minutesSection);
-            secondRow.appendChild(saveBtn);
-            dateHeader.appendChild(secondRow);
-            
-            deliveredList.appendChild(dateHeader);
-            
-            // Load existing delivery day data
-            fetch(`/api/delivery-day/${dateKey}`)
-              .then(res => res.json())
-              .then(data => {
-                kmInput.value = data.kilometers || '';
-                minutesInput.value = data.minutes || '';
-              })
-              .catch(err => console.error('Failed to load delivery day data:', err));
-
-            renderOrdersGroup(dateOrders, deliveredList);
+          // Render active orders
+          if (dayOrders.active.length > 0) {
+            const activeHeader = document.createElement('h3');
+            activeHeader.textContent = 'Pripeljana naročila';
+            activeHeader.style.marginTop = '16px';
+            activeHeader.style.marginBottom = '8px';
+            list.appendChild(activeHeader);
+            renderOrdersGroup(dayOrders.active, list);
           }
-        } else {
-          deliveredList.innerHTML = '<i>Ni še oddanih naročil.</i>';
+
+          // Render delivered orders
+          if (dayOrders.delivered.length > 0) {
+            const deliveredHeader = document.createElement('h3');
+            deliveredHeader.textContent = 'Oddana naročila';
+            deliveredHeader.style.marginTop = '16px';
+            deliveredHeader.style.marginBottom = '8px';
+            list.appendChild(deliveredHeader);
+            renderOrdersGroup(dayOrders.delivered, list);
+          }
         }
+      } else {
+        list.innerHTML = '<i>Ni naročil za dostavo.</i>';
       }
     } else if (isGroupedView) {
       // Group orders by date when status changed to current status (Končano or Oddano)
