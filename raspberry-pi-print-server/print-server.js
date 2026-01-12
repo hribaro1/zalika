@@ -98,12 +98,14 @@ async function printOrder(order) {
             const hasCustomerArticles = order.customerType === 'company' && order.customerId;
             
             let total = 0;
+            let totalQuantity = 0;
             order.items.forEach((item, index) => {
               printer.text(`${index + 1}. ${item.name}`);
               
               if (hasCustomerArticles) {
                 // Only show quantity without prices
                 printer.text(`   Kolicina: ${item.quantity}`);
+                totalQuantity += item.quantity || 0;
               } else {
                 // Show full price information
                 printer.text(`   ${item.quantity} x ${item.finalPrice.toFixed(2)} EUR`);
@@ -115,7 +117,15 @@ async function printOrder(order) {
             
             printer.text('================================');
             
-            if (!hasCustomerArticles) {
+            if (hasCustomerArticles) {
+              // Show total quantity if prices are hidden
+              printer
+                .style('bu')
+                .size(1, 1)
+                .text(`SKUPNA KOLICINA: ${totalQuantity}`)
+                .style('normal')
+                .size(0, 0);
+            } else {
               // Only show total if prices are visible
               printer
                 .style('bu')
