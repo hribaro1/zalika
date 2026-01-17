@@ -699,19 +699,43 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
       // Render each date group
       Object.keys(ordersByDate).sort().reverse().forEach(dateKey => {
         const dateOrders = ordersByDate[dateKey];
-        const dateTotal = dateOrders.reduce((sum, o) => {
+        
+        // Separate calculation for regular customers and companies with custom articles
+        let dateTotal = 0;
+        let totalArticleQuantity = 0;
+        
+        dateOrders.forEach(o => {
           const items = o.items || [];
-          return sum + items.reduce((s, item) => s + (item.lineTotal || 0), 0);
-        }, 0);
+          const hasCustomerArticles = o.customerType === 'company' && o.customerId;
+          
+          if (hasCustomerArticles) {
+            // Count quantity for companies with custom articles
+            totalArticleQuantity += items.reduce((s, item) => s + (item.quantity || 0), 0);
+          } else {
+            // Add to total for regular customers
+            dateTotal += items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+          }
+        });
         
         const dateHeader = document.createElement('div');
         dateHeader.className = 'date-group-header';
         const displayDate = dateOrders[0].statusHistory && dateOrders[0].statusHistory.length > 0 
           ? dateOrders[0].statusHistory[dateOrders[0].statusHistory.length - 1].timestamp 
           : dateOrders[0].createdAt;
+        
+        // Build header text with separate totals
+        let headerTotals = '';
+        if (dateTotal > 0) {
+          headerTotals += 'Dnevni znesek: ' + dateTotal.toFixed(2) + ' €';
+        }
+        if (totalArticleQuantity > 0) {
+          if (headerTotals) headerTotals += ' | ';
+          headerTotals += 'Skupaj Artiklov: ' + totalArticleQuantity;
+        }
+        
         dateHeader.innerHTML = `
           <strong>${formatDateOnly(displayDate)}</strong>
-          <span class="date-total">${dateTotal > 0 ? 'Dnevni znesek: ' + dateTotal.toFixed(2) + ' €' : ''}</span>
+          <span class="date-total">${headerTotals}</span>
         `;
         list.appendChild(dateHeader);
 
