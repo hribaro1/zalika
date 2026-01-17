@@ -1369,12 +1369,19 @@ function chooseCustomer(c) {
     pickupModeSel.value = c.pickupMode;
   }
   
-  // Set service to "Pranje in likanje" if company has custom articles
+  // Set service based on customer type and custom articles
   const serviceSel = document.getElementById('service');
-  if (serviceSel && c.type === 'company') {
-    const hasCustomArticles = articlesCache.some(art => art.customerId && String(art.customerId) === String(c._id));
-    if (hasCustomArticles) {
-      serviceSel.value = 'Pranje in likanje';
+  if (serviceSel) {
+    if (c.type === 'company') {
+      const hasCustomArticles = articlesCache.some(art => art.customerId && String(art.customerId) === String(c._id));
+      if (hasCustomArticles) {
+        serviceSel.value = 'Pranje in likanje';
+      } else {
+        serviceSel.value = 'Likanje';
+      }
+    } else {
+      // Physical person - set to "Likanje"
+      serviceSel.value = 'Likanje';
     }
   }
   
