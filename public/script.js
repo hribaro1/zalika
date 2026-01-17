@@ -828,35 +828,21 @@ function renderOrdersGroup(orders, list) {
           const isDeliveryView = window.location.pathname === '/delivery';
           
           if (isDeliveryView) {
-            // Force expand this specific card only
-            try {
-              const res = await fetch(`/order/${o._id}`);
-              if (res.ok) {
-                const updatedOrder = await res.json();
-                const oldDiv = e.currentTarget; // The div that was clicked
-                if (oldDiv && oldDiv.parentNode) {
-                  // Force add to expandedOrders BEFORE rendering
-                  expandedOrders.add(updatedOrder._id);
-                  
-                  const tempContainer = document.createElement('div');
-                  renderOrdersGroup([updatedOrder], tempContainer);
-                  const newDiv = tempContainer.firstChild;
-                  
-                  // CRITICAL: Remove from expandedOrders AFTER rendering completes
-                  // Use setTimeout to ensure DOM updates complete first
-                  setTimeout(() => {
-                    expandedOrders.delete(updatedOrder._id);
-                  }, 0);
-                  
-                  if (newDiv) {
-                    oldDiv.parentNode.replaceChild(newDiv, oldDiv);
-                    newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }
+            // In delivery view, temporarily add to expandedOrders and reload view
+            expandedOrders.add(o._id);
+            // Reload orders which will render this one as expanded
+            await loadOrders(false);
+            // Remove from expandedOrders after a short delay to allow other cards to stay compact
+            setTimeout(() => {
+              expandedOrders.delete(o._id);
+            }, 100);
+            // Scroll to expanded card
+            setTimeout(() => {
+              const expandedDiv = document.getElementById('order-' + o._id);
+              if (expandedDiv && !expandedDiv.classList.contains('order-compact')) {
+                expandedDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
-            } catch (err) {
-              console.error('Failed to expand order:', err);
-            }
+            }, 150);
           } else {
             // For other views, use the expandedOrders set approach
             expandedOrders.add(o._id);
