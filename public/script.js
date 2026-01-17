@@ -1102,7 +1102,13 @@ function openEditModal(order) {
   const modal = document.getElementById('editModal');
   if (!modal) { alert('Modal ni na voljo.'); return; }
   modal.setAttribute('aria-hidden', 'false'); modal.style.display = 'flex';
-  document.getElementById('edit-name').value = order.name || '';
+  
+  // Display customer name as read-only text
+  const nameDiv = document.getElementById('edit-name');
+  if (nameDiv) {
+    nameDiv.textContent = order.name || '';
+  }
+  
   const srv = document.getElementById('edit-service');
   for (let i=0;i<srv.options.length;i++) { if (srv.options[i].value === order.service) { srv.selectedIndex = i; break; } }
   const stat = document.getElementById('edit-status');
@@ -1121,7 +1127,10 @@ function openEditModal(order) {
   const notesSel = document.getElementById('edit-order-notes');
   if (notesSel) notesSel.value = order.orderNotes || '';
   modal.dataset.editingId = order._id;
-  document.getElementById('edit-name').focus();
+  
+  // Focus on service select instead of name
+  const serviceSel = document.getElementById('edit-service');
+  if (serviceSel) serviceSel.focus();
 }
 
 function closeEditModal() {
@@ -1134,7 +1143,7 @@ async function saveEdit() {
   const modal = document.getElementById('editModal');
   const id = modal.dataset.editingId;
   if (!id) return;
-  const name = document.getElementById('edit-name').value.trim();
+  
   const service = document.getElementById('edit-service').value;
   const pickupMode = document.getElementById('edit-pickup') ? document.getElementById('edit-pickup').value : 'personal';
   const status = document.getElementById('edit-status').value;
@@ -1142,12 +1151,10 @@ async function saveEdit() {
   const customerType = document.getElementById('edit-customer-type') ? document.getElementById('edit-customer-type').value : 'physical';
   const orderNotes = document.getElementById('edit-order-notes') ? document.getElementById('edit-order-notes').value.trim() : '';
 
-  if (!name) { alert('Ime mora biti izpolnjeno.'); return; }
-
   try {
     const res = await fetch(`/order/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, service, pickupMode, status, paymentMethod, customerType, orderNotes })
+      body: JSON.stringify({ service, pickupMode, status, paymentMethod, customerType, orderNotes })
     });
     if (!res.ok) { const err = await res.json().catch(() => null); throw new Error(err && err.error ? err.error : 'Server error'); }
     closeEditModal();
