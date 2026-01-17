@@ -521,15 +521,26 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           });
           
           // Calculate totals by payment method - ONLY for delivered orders
+          // Separate regular customers from companies with custom articles
           let cashTotal = 0;
           let invoiceTotal = 0;
+          let totalArticleQuantity = 0;
+          
           dayOrders.delivered.forEach(o => {
             const items = o.items || [];
-            const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
-            if (o.paymentMethod === 'cash') {
-              cashTotal += orderTotal;
+            const hasCustomerArticles = o.customerType === 'company' && o.customerId;
+            
+            if (hasCustomerArticles) {
+              // Count quantity for companies with custom articles
+              totalArticleQuantity += items.reduce((s, item) => s + (item.quantity || 0), 0);
             } else {
-              invoiceTotal += orderTotal;
+              // Calculate totals for regular customers
+              const orderTotal = items.reduce((s, item) => s + (item.lineTotal || 0), 0);
+              if (o.paymentMethod === 'cash') {
+                cashTotal += orderTotal;
+              } else {
+                invoiceTotal += orderTotal;
+              }
             }
           });
           const dateTotal = cashTotal + invoiceTotal;
@@ -544,9 +555,19 @@ async function loadOrders(preserveScrollPosition = true, scrollToOrderId = null)
           firstRow.style.justifyContent = 'space-between';
           firstRow.style.alignItems = 'center';
           firstRow.style.width = '100%';
+          
+          // Build totals display
+          let totalsDisplay = `Pripeljano: ${dayOrders.arrived.length} | Odpeljano: ${dayOrders.delivered.length}`;
+          if (dateTotal > 0) {
+            totalsDisplay += ` | Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €`;
+          }
+          if (totalArticleQuantity > 0) {
+            totalsDisplay += ` | Skupaj Artiklov: ${totalArticleQuantity}`;
+          }
+          
           firstRow.innerHTML = `
             <strong>${formatDateOnly(dateKey)}</strong>
-            <span class="date-total">Pripeljano: ${dayOrders.arrived.length} | Odpeljano: ${dayOrders.delivered.length} | Gotovina: ${cashTotal.toFixed(2)} € | Račun: ${invoiceTotal.toFixed(2)} € | Skupaj: ${dateTotal.toFixed(2)} €</span>
+            <span class="date-total">${totalsDisplay}</span>
           `;
           dateHeader.appendChild(firstRow);
           
