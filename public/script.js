@@ -823,30 +823,59 @@ function renderOrdersGroup(orders, list) {
           }
         `;
         div.style.cursor = 'pointer';
-        div.addEventListener('click', async () => {
-          expandedOrders.add(o._id);
-          // Re-render just this order instead of reloading entire page
-          try {
-            const res = await fetch(`/order/${o._id}`);
-            if (res.ok) {
-              const updatedOrder = await res.json();
-              // Remove old div and render expanded version
-              const oldDiv = document.getElementById('order-' + o._id);
-              if (oldDiv && oldDiv.parentNode) {
-                const tempContainer = document.createElement('div');
-                renderOrdersGroup([updatedOrder], tempContainer);
-                const newDiv = tempContainer.firstChild;
-                if (newDiv) {
-                  oldDiv.parentNode.replaceChild(newDiv, oldDiv);
-                  // Scroll to the expanded order
-                  newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        div.addEventListener('click', async (e) => {
+          // In delivery view, expand only this specific card, not all cards with same order ID
+          const isDeliveryView = window.location.pathname === '/delivery';
+          
+          if (isDeliveryView) {
+            // Don't add to expandedOrders set - just expand this specific card
+            try {
+              const res = await fetch(`/order/${o._id}`);
+              if (res.ok) {
+                const updatedOrder = await res.json();
+                // Remove old compact div and render expanded version
+                const oldDiv = e.currentTarget; // The div that was clicked
+                if (oldDiv && oldDiv.parentNode) {
+                  const tempContainer = document.createElement('div');
+                  renderOrdersGroup([updatedOrder], tempContainer);
+                  const newDiv = tempContainer.firstChild;
+                  if (newDiv) {
+                    // Remove the compact class and order-compact class from new div
+                    newDiv.classList.remove('order-compact');
+                    oldDiv.parentNode.replaceChild(newDiv, oldDiv);
+                    // Scroll to the expanded order
+                    newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
                 }
               }
+            } catch (err) {
+              console.error('Failed to expand order:', err);
             }
-          } catch (err) {
-            console.error('Failed to expand order:', err);
-            // Fallback to full reload if fetch fails
-            loadOrders(true, o._id);
+          } else {
+            // For other views, use the expandedOrders set approach
+            expandedOrders.add(o._id);
+            try {
+              const res = await fetch(`/order/${o._id}`);
+              if (res.ok) {
+                const updatedOrder = await res.json();
+                // Remove old div and render expanded version
+                const oldDiv = document.getElementById('order-' + o._id);
+                if (oldDiv && oldDiv.parentNode) {
+                  const tempContainer = document.createElement('div');
+                  renderOrdersGroup([updatedOrder], tempContainer);
+                  const newDiv = tempContainer.firstChild;
+                  if (newDiv) {
+                    oldDiv.parentNode.replaceChild(newDiv, oldDiv);
+                    // Scroll to the expanded order
+                    newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Failed to expand order:', err);
+              // Fallback to full reload if fetch fails
+              loadOrders(true, o._id);
+            }
           }
         });
         list.appendChild(div);
