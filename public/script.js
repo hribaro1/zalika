@@ -823,9 +823,31 @@ function renderOrdersGroup(orders, list) {
           }
         `;
         div.style.cursor = 'pointer';
-        div.addEventListener('click', () => {
+        div.addEventListener('click', async () => {
           expandedOrders.add(o._id);
-          loadOrders(true, o._id);
+          // Re-render just this order instead of reloading entire page
+          try {
+            const res = await fetch(`/order/${o._id}`);
+            if (res.ok) {
+              const updatedOrder = await res.json();
+              // Remove old div and render expanded version
+              const oldDiv = document.getElementById('order-' + o._id);
+              if (oldDiv && oldDiv.parentNode) {
+                const tempContainer = document.createElement('div');
+                renderOrdersGroup([updatedOrder], tempContainer);
+                const newDiv = tempContainer.firstChild;
+                if (newDiv) {
+                  oldDiv.parentNode.replaceChild(newDiv, oldDiv);
+                  // Scroll to the expanded order
+                  newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Failed to expand order:', err);
+            // Fallback to full reload if fetch fails
+            loadOrders(true, o._id);
+          }
         });
         list.appendChild(div);
         return;
