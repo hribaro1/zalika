@@ -104,6 +104,7 @@ const CustomerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, trim: true, lowercase: true },
   phone: { type: String, trim: true },
+  vatNumber: { type: String, trim: true },
   address: { type: String },
   notes: { type: String },
   type: { type: String, enum: ['physical', 'company'], default: 'physical' },

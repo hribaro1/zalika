@@ -54,6 +54,7 @@ async function addCustomer() {
   const name = document.getElementById('c-name').value.trim();
   const email = document.getElementById('c-email').value.trim();
   const phone = document.getElementById('c-phone').value.trim();
+  const vatNumber = document.getElementById('c-vat').value.trim();
   const address = document.getElementById('c-address').value.trim();
   const type = document.getElementById('c-type').value;
   const paymentMethod = document.getElementById('c-payment').value;
@@ -61,11 +62,12 @@ async function addCustomer() {
   const notes = document.getElementById('c-notes').value.trim();
   if (!name) return alert('Vnesite ime.');
   try {
-    const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, pickupMode, notes }) });
+    const res = await fetch('/api/customers', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, vatNumber, address, type, paymentMethod, pickupMode, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
     document.getElementById('c-name').value = '';
     document.getElementById('c-email').value = '';
     document.getElementById('c-phone').value = '';
+    document.getElementById('c-vat').value = '';
     document.getElementById('c-address').value = '';
     document.getElementById('c-notes').value = '';
     loadCustomersCache().then(applyFilter);
@@ -88,6 +90,7 @@ function openEdit(c) {
   document.getElementById('edit-c-name').value = c.name || '';
   document.getElementById('edit-c-email').value = c.email || '';
   document.getElementById('edit-c-phone').value = c.phone || '';
+  document.getElementById('edit-c-vat').value = c.vatNumber || '';
   document.getElementById('edit-c-address').value = c.address || '';
   document.getElementById('edit-c-type').value = c.type || 'physical';
   document.getElementById('edit-c-payment').value = c.paymentMethod || 'cash';
@@ -103,6 +106,7 @@ async function saveEdit() {
   const name = document.getElementById('edit-c-name').value.trim();
   const email = document.getElementById('edit-c-email').value.trim();
   const phone = document.getElementById('edit-c-phone').value.trim();
+  const vatNumber = document.getElementById('edit-c-vat').value.trim();
   const address = document.getElementById('edit-c-address').value.trim();
   const type = document.getElementById('edit-c-type').value;
   const paymentMethod = document.getElementById('edit-c-payment').value;
@@ -110,7 +114,7 @@ async function saveEdit() {
   const notes = document.getElementById('edit-c-notes').value.trim();
   if (!name) return alert('Vnesite ime.');
   try {
-    const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, address, type, paymentMethod, pickupMode, notes }) });
+    const res = await fetch('/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, phone, vatNumber, address, type, paymentMethod, pickupMode, notes }) });
     if (!res.ok) { const e = await res.json().catch(() => null); throw new Error(e && e.error ? e.error : 'Server error'); }
     closeEdit(); loadCustomersCache().then(applyFilter);
   } catch (err) { console.error(err); alert('Napaka pri posodabljanju.'); }
