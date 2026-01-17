@@ -833,15 +833,23 @@ function renderOrdersGroup(orders, list) {
               const res = await fetch(`/order/${o._id}`);
               if (res.ok) {
                 const updatedOrder = await res.json();
-                // Remove old compact div and render expanded version
+                // Remove old compact div and manually render expanded version
                 const oldDiv = e.currentTarget; // The div that was clicked
                 if (oldDiv && oldDiv.parentNode) {
+                  // Temporarily add to expandedOrders to force expanded rendering
+                  const wasExpanded = expandedOrders.has(updatedOrder._id);
+                  expandedOrders.add(updatedOrder._id);
+                  
                   const tempContainer = document.createElement('div');
                   renderOrdersGroup([updatedOrder], tempContainer);
                   const newDiv = tempContainer.firstChild;
+                  
+                  // Remove from expandedOrders if it wasn't there before
+                  if (!wasExpanded) {
+                    expandedOrders.delete(updatedOrder._id);
+                  }
+                  
                   if (newDiv) {
-                    // Remove the compact class and order-compact class from new div
-                    newDiv.classList.remove('order-compact');
                     oldDiv.parentNode.replaceChild(newDiv, oldDiv);
                     // Scroll to the expanded order
                     newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
