@@ -1411,22 +1411,21 @@ function openEditItemModal(orderId, itemIndex, item) {
   // Set current values
   document.getElementById('edit-item-quantity').value = typeof item.quantity === 'number' ? item.quantity : 1;
   
-  // Get customerId from order element
-  const orderEl = document.getElementById('order-' + orderId);
-  const customerId = orderEl ? orderEl.dataset.customerId : null;
+  // Display article name (read-only)
+  const articleNameDiv = document.getElementById('edit-item-article-name');
+  if (articleNameDiv) {
+    articleNameDiv.textContent = item.name || '(artikel)';
+  }
   
-  // Setup article select
-  const articleContainer = document.getElementById('edit-item-article-container');
-  articleContainer.innerHTML = '';
-  const articleSel = createArticleSelect(item.articleId, customerId);
-  articleContainer.appendChild(articleSel);
+  // Store article ID for saving
+  modal.dataset.editingArticleId = item.articleId || '';
   
-  // Trigger the dropdown to show when the input is ready
+  // Set focus on quantity input
   setTimeout(() => {
-    const input = articleSel.querySelector('.article-input');
-    if (input) {
-      input.focus();
-      input.click();
+    const qtyInput = document.getElementById('edit-item-quantity');
+    if (qtyInput) {
+      qtyInput.focus();
+      qtyInput.select(); // Select all text for easy editing
     }
   }, 100);
   
@@ -1441,22 +1440,21 @@ function closeEditItemModal() {
   modal.style.display = 'none';
   delete modal.dataset.editingOrderId;
   delete modal.dataset.editingItemIndex;
+  delete modal.dataset.editingArticleId;
 }
 
 async function saveEditItem() {
   const modal = document.getElementById('editItemModal');
   const orderId = modal.dataset.editingOrderId;
   const itemIndex = parseInt(modal.dataset.editingItemIndex);
+  const articleId = modal.dataset.editingArticleId;
   
   if (!orderId || isNaN(itemIndex)) return;
   
   const qtyInput = document.getElementById('edit-item-quantity');
   const quantity = Math.max(0, parseFloat(qtyInput.value) || 0);
   
-  const articleContainer = document.getElementById('edit-item-article-container').querySelector('.article-select-container');
-  const articleId = articleContainer ? articleContainer.dataset.selectedId : '';
-  
-  if (!articleId) { alert('Izberite artikel.'); return; }
+  if (!articleId) { alert('Artikel ni izbran.'); return; }
   
   const art = articlesCache.find(a => String(a._id) === String(articleId));
   if (!art) { alert('Artikel ni na voljo.'); return; }
