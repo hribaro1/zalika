@@ -262,9 +262,23 @@ function renderOrderItems(container, items, orderId, allowEdit = true, customerI
     container.innerHTML = '<i>Ni pozicij.</i>';
     return;
   }
+  
+  // Sort items by usageCount (ascending) if they have articleId (customer articles)
+  const sortedItems = [...items].sort((a, b) => {
+    if (a.articleId && b.articleId) {
+      // Find usageCount from articlesCache
+      const artA = articlesCache.find(art => String(art._id) === String(a.articleId));
+      const artB = articlesCache.find(art => String(art._id) === String(b.articleId));
+      const countA = artA ? (artA.usageCount || 0) : 0;
+      const countB = artB ? (artB.usageCount || 0) : 0;
+      return countA - countB; // Sort ascending
+    }
+    return 0; // Keep original order for non-article items
+  });
+  
   const ul = document.createElement('div');
   ul.className = 'order-items';
-  items.forEach((it, index) => {
+  sortedItems.forEach((it, index) => {
     const row = document.createElement('div');
     row.className = 'order-item';
     if (allowEdit) {
@@ -284,7 +298,13 @@ function renderOrderItems(container, items, orderId, allowEdit = true, customerI
     }
     
     if (allowEdit) {
-      row.addEventListener('click', () => openEditItemModal(orderId, index, it));
+      // Use original index to maintain consistency with items array
+      const originalIndex = items.findIndex(origItem => 
+        origItem.articleId && it.articleId 
+          ? String(origItem.articleId) === String(it.articleId)
+          : origItem === it
+      );
+      row.addEventListener('click', () => openEditItemModal(orderId, originalIndex, it));
     }
     ul.appendChild(row);
   });
@@ -804,7 +824,7 @@ function renderOrdersGroup(orders, list) {
 
       // Add item form or customer articles form (only if not in delivery view)
       let addWrap = null;
-      if (!isDeliveryView) {
+      if (!isDeliveryView && !hasCustomerArticles) {
         addWrap = document.createElement('div');
         addWrap.className = 'add-item-wrap';
 
@@ -813,77 +833,27 @@ function renderOrdersGroup(orders, list) {
           e.stopPropagation();
         });
 
-        if (hasCustomerArticles) {
-          // Show all customer articles with quantity inputs
-          const articlesTitle = document.createElement('div');
-          articlesTitle.innerHTML = '<strong>Artikli stranke - vnesite količine:</strong>';
-          articlesTitle.style.marginTop = '8px';
-          articlesTitle.style.marginBottom = '8px';
-          addWrap.appendChild(articlesTitle);
+        // Standard article selector for customers without custom articles
+        const articleSel = createArticleSelect(null, o.customerId);
+        articleSel.style.marginTop = '8px';
+        articleSel.style.marginRight = '12px';
+        const qtyIn = document.createElement('input');
+        qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
+        qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
 
-          customerArticles.forEach((art, idx) => {
-            const artRow = document.createElement('div');
-            artRow.style.display = 'flex';
-            artRow.style.alignItems = 'center';
-            artRow.style.marginBottom = '4px';
-            artRow.style.gap = '8px';
+        // ✅ Prevent quantity input clicks from propagating
+        qtyIn.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
 
-            const artLabel = document.createElement('span');
-            artLabel.textContent = art.name;
-            artLabel.style.flex = '1';
-
-            const qtyInput = document.createElement('input');
-            qtyInput.type = 'number';
-            qtyInput.min = '0';
-            qtyInput.step = '0.1';
-            qtyInput.placeholder = 'Količina';
-            qtyInput.style.width = '80px';
-            qtyInput.className = 'customer-article-qty';
-            qtyInput.dataset.articleId = art._id;
-
-            // Find if this article already exists in items
-            const existingItem = currentItems.find(it => String(it.articleId) === String(art._id));
-            if (existingItem) {
-              qtyInput.value = existingItem.quantity || 0;
-            }
-
-            // Update item on change
-            qtyInput.addEventListener('change', async () => {
-              const qty = parseFloat(qtyInput.value) || 0;
-              await updateCustomerArticleQuantity(o._id, art, qty, div);
-            });
-
-            qtyInput.addEventListener('click', (e) => {
-              e.stopPropagation();
-            });
-
-            artRow.appendChild(artLabel);
-            artRow.appendChild(qtyInput);
-            addWrap.appendChild(artRow);
-          });
-        } else {
-          // Standard article selector for customers without custom articles
-          const articleSel = createArticleSelect(null, o.customerId);
-          articleSel.style.marginTop = '8px';
-          articleSel.style.marginRight = '12px';
-          const qtyIn = document.createElement('input');
-          qtyIn.type = 'number'; qtyIn.min = '0'; qtyIn.step = '0.1'; qtyIn.value = '1'; qtyIn.className = 'article-qty';
-          qtyIn.style.width = '50px'; qtyIn.style.marginLeft = '8px';
-
-          // ✅ Prevent quantity input clicks from propagating
-          qtyIn.addEventListener('click', (e) => {
-            e.stopPropagation();
-          });
-
-          const addBtn = document.createElement('button');
-          addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
-          addBtn.style.marginLeft = '8px';
-          addBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            addItemToOrder(o._id, div);
-          });
-          addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
-        }
+        const addBtn = document.createElement('button');
+        addBtn.className = 'small-btn'; addBtn.textContent = 'Dodaj pozicijo';
+        addBtn.style.marginLeft = '8px';
+        addBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          addItemToOrder(o._id, div);
+        });
+        addWrap.appendChild(articleSel); addWrap.appendChild(qtyIn); addWrap.appendChild(addBtn);
       }
 
       const statusSelect = document.createElement('select');

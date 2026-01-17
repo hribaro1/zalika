@@ -318,6 +318,24 @@ app.post("/order", async (req, res) => {
     const order = new Order(req.body);
     order.orderNumber = await generateOrderNumber();
     order.statusHistory = [{ status: order.status, timestamp: new Date() }];
+    
+    // If customer has custom articles, automatically add all articles with quantity 0
+    if (order.customerId && order.customerType === 'company') {
+      const customerArticles = await Article.find({ customerId: order.customerId }).sort({ usageCount: 1 }).lean();
+      if (customerArticles.length > 0) {
+        order.items = customerArticles.map(art => ({
+          articleId: art._id,
+          name: art.name,
+          unit: art.unit,
+          price: art.price,
+          vatPercent: art.vatPercent,
+          finalPrice: art.finalPrice,
+          quantity: 0,
+          lineTotal: 0
+        }));
+      }
+    }
+    
     await order.save();
     
     // Increment customer usage count if customerId is provided
