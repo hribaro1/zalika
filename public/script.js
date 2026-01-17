@@ -1368,6 +1368,16 @@ function chooseCustomer(c) {
   if (pickupModeSel && c.pickupMode) {
     pickupModeSel.value = c.pickupMode;
   }
+  
+  // Set service to "Pranje in likanje" if company has custom articles
+  const serviceSel = document.getElementById('service');
+  if (serviceSel && c.type === 'company') {
+    const hasCustomArticles = articlesCache.some(art => art.customerId && String(art.customerId) === String(c._id));
+    if (hasCustomArticles) {
+      serviceSel.value = 'Pranje in likanje';
+    }
+  }
+  
   // hide suggestions
   const box = document.getElementById('customerSuggestions');
   if (box) { box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }
