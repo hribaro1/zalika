@@ -144,6 +144,7 @@ function openEdit(a){
   document.getElementById('edit-a-unit').value = a.unit || '';
   document.getElementById('edit-a-price').value = (a.price != null) ? a.price : '';
   document.getElementById('edit-a-vat').value = (a.vatPercent != null) ? a.vatPercent : '';
+  document.getElementById('edit-a-usageCount').value = (a.usageCount != null) ? a.usageCount : 0;
   document.getElementById('edit-a-customer').value = a.customerId || '';
   document.getElementById('edit-a-final').textContent = (a.finalPrice != null) ? a.finalPrice.toFixed(2) + ' €' : '0.00 €';
 }
@@ -160,16 +161,18 @@ async function saveEdit(){
   const unit = document.getElementById('edit-a-unit').value.trim();
   const price = parseFloat(document.getElementById('edit-a-price').value);
   const vat = parseFloat(document.getElementById('edit-a-vat').value);
+  const usageCount = parseInt(document.getElementById('edit-a-usageCount').value);
   const customerId = document.getElementById('edit-a-customer').value || null;
   if(!name) return alert('Vnesite naziv.');
   if(!unit) return alert('Vnesite enoto mere.');
   if(isNaN(price) || price < 0) return alert('Vnesite veljavno ceno.');
   if(isNaN(vat) || vat < 0) return alert('Vnesite veljaven DDV.');
+  if(isNaN(usageCount) || usageCount < 0) return alert('Vnesite veljaven števec.');
   try{
     const res = await fetch('/api/articles/' + id, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, unit, price, vatPercent: vat, customerId })
+      body: JSON.stringify({ name, unit, price, vatPercent: vat, usageCount, customerId })
     });
     if(!res.ok){ const e = await res.json().catch(()=>null); throw new Error(e && e.error ? e.error : 'Server error'); }
     closeEdit();
