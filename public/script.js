@@ -828,30 +828,28 @@ function renderOrdersGroup(orders, list) {
           const isDeliveryView = window.location.pathname === '/delivery';
           
           if (isDeliveryView) {
-            // Don't add to expandedOrders set - just expand this specific card
+            // Force expand this specific card only
             try {
               const res = await fetch(`/order/${o._id}`);
               if (res.ok) {
                 const updatedOrder = await res.json();
-                // Remove old compact div and manually render expanded version
                 const oldDiv = e.currentTarget; // The div that was clicked
                 if (oldDiv && oldDiv.parentNode) {
-                  // Temporarily add to expandedOrders to force expanded rendering
-                  const wasExpanded = expandedOrders.has(updatedOrder._id);
+                  // Force add to expandedOrders BEFORE rendering
                   expandedOrders.add(updatedOrder._id);
                   
                   const tempContainer = document.createElement('div');
                   renderOrdersGroup([updatedOrder], tempContainer);
                   const newDiv = tempContainer.firstChild;
                   
-                  // Remove from expandedOrders if it wasn't there before
-                  if (!wasExpanded) {
+                  // CRITICAL: Remove from expandedOrders AFTER rendering completes
+                  // Use setTimeout to ensure DOM updates complete first
+                  setTimeout(() => {
                     expandedOrders.delete(updatedOrder._id);
-                  }
+                  }, 0);
                   
                   if (newDiv) {
                     oldDiv.parentNode.replaceChild(newDiv, oldDiv);
-                    // Scroll to the expanded order
                     newDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }
